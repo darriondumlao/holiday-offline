@@ -117,7 +117,7 @@ export default function Home() {
   }
 
   return (
-    <div className='h-screen bg-black flex flex-col items-center justify-center px-4 py-8 overflow-hidden relative'>
+    <div className='fixed inset-0 bg-black flex flex-col items-center justify-center px-4 py-8 overflow-hidden'>
       {/* Audio Player */}
       <AudioPlayer />
 

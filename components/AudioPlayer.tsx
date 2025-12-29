@@ -73,7 +73,7 @@ export default function AudioPlayer() {
               step="0.01"
               value={volume}
               onChange={handleVolumeChange}
-              className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer volume-slider"
+              className="w-24 h-2 md:h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer volume-slider touch-none"
               style={{
                 background: `linear-gradient(to right, #ffffff ${volume * 100}%, #4b5563 ${volume * 100}%)`,
               }}
@@ -92,7 +92,7 @@ export default function AudioPlayer() {
                 if (!isPlaying) togglePlay()
               }
             }}
-            className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+            className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors touch-manipulation"
             aria-label="Audio controls"
           >
             {isMuted || !isPlaying ? (
