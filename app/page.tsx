@@ -12,6 +12,7 @@ export default function Home() {
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false)
   const [isSubmittingSubscribe, setIsSubmittingSubscribe] = useState(false)
   const [answerSuccess, setAnswerSuccess] = useState(false)
+  const [answerError, setAnswerError] = useState('')
   const [subscribeSuccess, setSubscribeSuccess] = useState(false)
   const [subscribeError, setSubscribeError] = useState('')
   const [showSpotlight, setShowSpotlight] = useState(true)
@@ -39,6 +40,7 @@ export default function Home() {
     if (!answer.trim()) return
 
     setIsSubmittingAnswer(true)
+    setAnswerError('')
 
     try {
       const response = await fetch('/api/submit-answer', {
@@ -47,15 +49,22 @@ export default function Home() {
         body: JSON.stringify({ answer }),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         setAnswerSuccess(true)
         setTimeout(() => {
           setAnswerSuccess(false)
           setAnswer('')
         }, 3000)
+      } else {
+        setAnswerError(data.error || 'Something went wrong')
+        setTimeout(() => setAnswerError(''), 5000)
       }
     } catch (error) {
       console.error('Error submitting answer:', error)
+      setAnswerError('Network error. Please try again.')
+      setTimeout(() => setAnswerError(''), 5000)
     } finally {
       setIsSubmittingAnswer(false)
     }
@@ -174,6 +183,10 @@ export default function Home() {
             {answerSuccess ? (
               <p className='text-green-500 text-xs py-2 animate-fade-in'>
                 Thank you for sharing
+              </p>
+            ) : answerError ? (
+              <p className='text-yellow-500 text-xs py-2 animate-fade-in break-words'>
+                {answerError}
               </p>
             ) : (
               <div className='relative'>

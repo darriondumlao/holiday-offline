@@ -9,11 +9,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Answer is required' }, { status: 400 });
     }
 
+    // Check for required environment variables
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEET_ID) {
+      console.error('Missing Google Sheets environment variables');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     // Google Sheets setup
+    // Handle the private key - replace literal \n with actual newlines
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY
+      ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : '';
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        private_key: privateKey,
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
@@ -34,6 +45,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error submitting answer:', error);
-    return NextResponse.json({ error: 'Failed to submit answer' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error details:', errorMessage);
+    return NextResponse.json({ error: 'Failed to submit answer', details: errorMessage }, { status: 500 });
   }
 }
