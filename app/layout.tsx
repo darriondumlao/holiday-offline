@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import TickerHeader from "@/components/TickerHeader";
 
 export const metadata: Metadata = {
   title: "holiday is offline",
@@ -43,6 +44,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://sheets.googleapis.com" />
       </head>
       <body className="antialiased">
+        <TickerHeader />
         {children}
       </body>
     </html>

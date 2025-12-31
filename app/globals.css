@@ -181,3 +181,39 @@ html, body {
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+
+/* Ticker Animation */
+@keyframes ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-16.666%, 0, 0);
+  }
+}
+
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker 45s linear infinite;
+  will-change: transform;
+}
+
+.ticker-item {
+  display: inline-block;
+  padding: 0 4rem;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.ticker:hover {
+  animation-play-state: paused;
+}

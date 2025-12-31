@@ -139,7 +139,7 @@ export default function Home() {
         </div>
       )}
 
-      <main className='w-full max-w-2xl flex flex-col items-center justify-center h-full text-center py-8'>
+      <main className='w-full max-w-2xl flex flex-col items-center justify-center h-full text-center py-8 pt-6'>
         <div className='flex flex-col items-center justify-center space-y-6 md:space-y-8'>
           {/* Logo - Responsive sizing */}
           <div
