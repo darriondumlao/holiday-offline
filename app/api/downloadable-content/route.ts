@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDownloadableContent, urlFor } from '@/lib/sanity'
+import { getDownloadableContent } from '@/lib/sanity'
 
 export async function GET() {
   try {
@@ -9,17 +9,20 @@ export async function GET() {
       return NextResponse.json({ content: null })
     }
 
-    // Build the image URL
-    const imageUrl = content.downloadableImage
-      ? urlFor(content.downloadableImage).url()
-      : null
+    // Get the file URL from Sanity
+    const fileUrl = content.downloadableFile?.asset?.url || null
+
+    // Get the original filename and extension
+    const originalFilename = content.downloadableFile?.asset?.originalFilename || null
+    const extension = originalFilename ? originalFilename.split('.').pop() : null
 
     return NextResponse.json({
       content: {
         title: content.title,
         questionText: content.questionText,
-        imageUrl,
+        fileUrl,
         downloadFileName: content.downloadFileName,
+        fileExtension: extension,
         delaySeconds: content.delaySeconds,
       },
     })

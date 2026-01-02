@@ -36,7 +36,7 @@ export interface DownloadableContent {
   _id: string
   title: string
   questionText: string
-  downloadableImage: any
+  downloadableFile: any
   downloadFileName: string
   isActive: boolean
   delaySeconds: number
@@ -251,7 +251,13 @@ export async function getDownloadableContent(): Promise<DownloadableContent | nu
       _id,
       title,
       questionText,
-      downloadableImage,
+      downloadableFile {
+        asset-> {
+          _ref,
+          originalFilename,
+          url
+        }
+      },
       downloadFileName,
       isActive,
       delaySeconds

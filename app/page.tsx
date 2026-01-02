@@ -22,8 +22,9 @@ export default function Home() {
   const [downloadModalData, setDownloadModalData] = useState<{
     title: string
     questionText: string
-    imageUrl: string
+    fileUrl: string
     downloadFileName: string
+    fileExtension: string | null
     delaySeconds: number
   } | null>(null)
 
@@ -51,7 +52,7 @@ export default function Home() {
         const response = await fetch('/api/downloadable-content')
         const data = await response.json()
 
-        if (data.content && data.content.imageUrl) {
+        if (data.content && data.content.fileUrl) {
           setDownloadModalData(data.content)
 
           // Show modal after the specified delay
@@ -169,8 +170,9 @@ export default function Home() {
         <BouncingDownloadModal
           title={downloadModalData.title}
           questionText={downloadModalData.questionText}
-          imageUrl={downloadModalData.imageUrl}
+          imageUrl={downloadModalData.fileUrl}
           downloadFileName={downloadModalData.downloadFileName}
+          fileExtension={downloadModalData.fileExtension}
           onClose={() => setShowDownloadModal(false)}
         />
       )}

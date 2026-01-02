@@ -7,6 +7,7 @@ interface BouncingDownloadModalProps {
   questionText: string
   imageUrl: string
   downloadFileName: string
+  fileExtension: string | null
   onClose: () => void
 }
 
@@ -15,6 +16,7 @@ export default function BouncingDownloadModal({
   questionText,
   imageUrl,
   downloadFileName,
+  fileExtension,
   onClose,
 }: BouncingDownloadModalProps) {
   const [position, setPosition] = useState({ x: 50, y: 50 })
@@ -80,16 +82,20 @@ export default function BouncingDownloadModal({
 
   const handleDownload = async () => {
     try {
-      // Use API route to proxy the download (avoids CORS issues in production)
-      const downloadUrl = `/api/download-image?url=${encodeURIComponent(imageUrl)}&fileName=${encodeURIComponent(downloadFileName)}`
+      // Fetch the file and trigger download
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = downloadUrl
-      a.download = `${downloadFileName}.jpg`
+      a.href = url
+      // Use the file extension from Sanity, or default to the original if not provided
+      a.download = `${downloadFileName}${fileExtension ? `.${fileExtension}` : ''}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Error downloading image:', error)
+      console.error('Error downloading file:', error)
     }
   }
 
