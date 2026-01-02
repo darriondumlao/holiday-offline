@@ -50,6 +50,71 @@ export default defineConfig({
           },
         },
       },
+      {
+        name: 'downloadableContent',
+        title: 'Downloadable Content Modal',
+        type: 'document',
+        fields: [
+          {
+            name: 'title',
+            title: 'Modal Title',
+            type: 'string',
+            description: 'Title shown in the modal (e.g., "Content Available")',
+            initialValue: 'Content Available',
+          },
+          {
+            name: 'questionText',
+            title: 'Question Text',
+            type: 'text',
+            description: 'The main question displayed in the modal',
+            initialValue: 'Do your hands or your eyes create the moments people will remember you for?',
+          },
+          {
+            name: 'downloadableImage',
+            title: 'Downloadable Image',
+            type: 'image',
+            description: 'The image that users can download',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'downloadFileName',
+            title: 'Download File Name',
+            type: 'string',
+            description: 'Name for the downloaded file (without extension)',
+            initialValue: 'holiday-content',
+          },
+          {
+            name: 'isActive',
+            title: 'Active',
+            type: 'boolean',
+            description: 'Enable/disable the modal from appearing',
+            initialValue: true,
+          },
+          {
+            name: 'delaySeconds',
+            title: 'Delay Before Showing (seconds)',
+            type: 'number',
+            description: 'How many seconds to wait before showing the modal',
+            initialValue: 4,
+            validation: (Rule) => Rule.min(0).max(30),
+          },
+        ],
+        preview: {
+          select: {
+            title: 'title',
+            subtitle: 'isActive',
+            media: 'downloadableImage',
+          },
+          prepare(selection) {
+            const { title, subtitle, media } = selection
+            return {
+              title: title,
+              subtitle: subtitle ? '✓ Active' : '✗ Inactive',
+              media: media,
+            }
+          },
+        },
+      },
     ],
   },
 })

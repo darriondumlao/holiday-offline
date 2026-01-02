@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import AudioPlayer from '@/components/AudioPlayer'
+import BouncingDownloadModal from '@/components/BouncingDownloadModal'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -17,6 +18,14 @@ export default function Home() {
   const [subscribeError, setSubscribeError] = useState('')
   const [showSpotlight, setShowSpotlight] = useState(true)
   const [showContent, setShowContent] = useState(false)
+  const [showDownloadModal, setShowDownloadModal] = useState(false)
+  const [downloadModalData, setDownloadModalData] = useState<{
+    title: string
+    questionText: string
+    imageUrl: string
+    downloadFileName: string
+    delaySeconds: number
+  } | null>(null)
 
   useEffect(() => {
     // Show logo as spotlight starts to shine
@@ -33,6 +42,31 @@ export default function Home() {
       clearTimeout(logoTimer)
       clearTimeout(spotlightTimer)
     }
+  }, [])
+
+  // Fetch and show downloadable content modal
+  useEffect(() => {
+    const fetchDownloadableContent = async () => {
+      try {
+        const response = await fetch('/api/downloadable-content')
+        const data = await response.json()
+
+        if (data.content && data.content.imageUrl) {
+          setDownloadModalData(data.content)
+
+          // Show modal after the specified delay
+          const modalTimer = setTimeout(() => {
+            setShowDownloadModal(true)
+          }, (data.content.delaySeconds || 4) * 1000)
+
+          return () => clearTimeout(modalTimer)
+        }
+      } catch (error) {
+        console.error('Error fetching downloadable content:', error)
+      }
+    }
+
+    fetchDownloadableContent()
   }, [])
 
   const handleAnswerSubmit = async (e: React.FormEvent) => {
@@ -129,6 +163,17 @@ export default function Home() {
     <div className='fixed inset-0 bg-black flex flex-col items-center justify-center px-4 py-8 overflow-hidden'>
       {/* Audio Player */}
       <AudioPlayer />
+
+      {/* Bouncing Download Modal */}
+      {showDownloadModal && downloadModalData && (
+        <BouncingDownloadModal
+          title={downloadModalData.title}
+          questionText={downloadModalData.questionText}
+          imageUrl={downloadModalData.imageUrl}
+          downloadFileName={downloadModalData.downloadFileName}
+          onClose={() => setShowDownloadModal(false)}
+        />
+      )}
 
       {/* Spotlight Effect */}
       {showSpotlight && (

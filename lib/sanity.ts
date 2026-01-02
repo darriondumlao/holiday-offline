@@ -1,4 +1,5 @@
 import { createClient } from '@sanity/client'
+import imageUrlBuilder from '@sanity/image-url'
 
 // Sanity client (for holiday4nick project - ticker, lookbooks, radio, etc.)
 export const sanityClient = createClient({
@@ -8,6 +9,14 @@ export const sanityClient = createClient({
   useCdn: false, // Use false for real-time updates
   token: process.env.SANITY_API_TOKEN,
 })
+
+// Image URL builder
+const builder = imageUrlBuilder(sanityClient)
+export function urlFor(source: any) {
+  return builder.image(source)
+}
+
+export { imageUrlBuilder }
 
 // Alias for clarity when using holiday4nick data
 export const holiday4nickClient = sanityClient
@@ -20,6 +29,17 @@ export interface TickerMessage {
   order: number
   _createdAt: string
   _updatedAt: string
+}
+
+// Downloadable Content Interface
+export interface DownloadableContent {
+  _id: string
+  title: string
+  questionText: string
+  downloadableImage: any
+  downloadFileName: string
+  isActive: boolean
+  delaySeconds: number
 }
 
 // Holiday4Nick Schema Interfaces
@@ -222,4 +242,20 @@ export async function getTickerMessages(): Promise<TickerMessage[]> {
       _updatedAt
     }`
   )
+}
+
+// Get active downloadable content modal
+export async function getDownloadableContent(): Promise<DownloadableContent | null> {
+  const results = await sanityClient.fetch(
+    `*[_type == "downloadableContent" && isActive == true] | order(_createdAt desc) [0] {
+      _id,
+      title,
+      questionText,
+      downloadableImage,
+      downloadFileName,
+      isActive,
+      delaySeconds
+    }`
+  )
+  return results || null
 }
