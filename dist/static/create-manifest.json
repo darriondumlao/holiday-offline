@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "createdAt": "2026-01-04T06:03:33.743Z",
+  "workspaces": [
+    {
+      "name": "default",
+      "title": "Holiday Landing Ticker",
+      "basePath": "/studio",
+      "projectId": "uq9s8one",
+      "dataset": "production",
+      "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><rect width=\"32\" height=\"32\" rx=\"2\" fill=\"#ef4434\"></rect><text x=\"50%\" y=\"50%\" text-anchor=\"middle\" alignment-baseline=\"middle\" fill=\"hsla(5, 85%, 17%, 1)\" style=\"font-family:Inter, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, &quot;Liberation Sans&quot;, Helvetica, Arial, system-ui, sans-serif;font-weight:500;font-size:13px;transform:translateY(1px)\">HL</text></svg>",
+      "mediaLibrary": {
+        "enabled": false
+      },
+      "schema": "c92f1621.create-schema.json",
+      "tools": "d57bf8ec.create-tools.json"
+    }
+  ],
+  "studioVersion": "5.1.0"
+}

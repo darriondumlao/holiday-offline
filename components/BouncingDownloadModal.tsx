@@ -117,7 +117,7 @@ export default function BouncingDownloadModal({
 
   const handleWhoAmI = () => {
     window.open(
-      'https://www.youtube.com/watch?v=9Z24eeAgt_0&t=3s',
+      'https://youtu.be/Xkg7dp1QY9k?si=EuQIMvpoB_FmhR6d',
       '_blank',
       'noopener,noreferrer'
     )

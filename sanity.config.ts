@@ -115,6 +115,77 @@ export default defineConfig({
           },
         },
       },
+      {
+        name: 'product',
+        title: 'Product',
+        type: 'document',
+        fields: [
+          {
+            name: 'name',
+            title: 'Product Name',
+            type: 'string',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'images',
+            title: 'Product Images',
+            type: 'array',
+            of: [
+              {
+                type: 'image',
+                options: {
+                  hotspot: true,
+                },
+                fields: [
+                  {
+                    name: 'alt',
+                    title: 'Alternative Text',
+                    type: 'string',
+                  },
+                ],
+              },
+            ],
+            validation: (Rule) => Rule.required().min(1),
+          },
+          {
+            name: 'sizes',
+            title: 'Available Sizes',
+            type: 'array',
+            of: [{ type: 'string' }],
+            description: 'List of available sizes (e.g., XS, S, M, L, XL)',
+            validation: (Rule) => Rule.required().min(1),
+          },
+          {
+            name: 'shopifyCheckoutUrl',
+            title: 'Shopify Checkout Base URL',
+            type: 'url',
+            description: 'Base Shopify checkout URL (variant will be appended)',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'isActive',
+            title: 'Active',
+            type: 'boolean',
+            description: 'Show this product in the offline unlock section',
+            initialValue: true,
+          },
+        ],
+        preview: {
+          select: {
+            title: 'name',
+            subtitle: 'isActive',
+            media: 'images.0',
+          },
+          prepare(selection) {
+            const { title, subtitle, media } = selection
+            return {
+              title: title,
+              subtitle: subtitle ? '✓ Active' : '✗ Inactive',
+              media: media,
+            }
+          },
+        },
+      },
     ],
   },
 })

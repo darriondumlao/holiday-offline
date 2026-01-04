@@ -42,6 +42,16 @@ export interface DownloadableContent {
   delaySeconds: number
 }
 
+// Product Interface
+export interface Product {
+  _id: string
+  name: string
+  images: any[]
+  sizes: string[]
+  shopifyCheckoutUrl: string
+  isActive: boolean
+}
+
 // Holiday4Nick Schema Interfaces
 export interface Lookbook {
   _id: string
@@ -261,6 +271,27 @@ export async function getDownloadableContent(): Promise<DownloadableContent | nu
       downloadFileName,
       isActive,
       delaySeconds
+    }`
+  )
+  return results || null
+}
+
+// Get active product
+export async function getActiveProduct(): Promise<Product | null> {
+  const results = await sanityClient.fetch(
+    `*[_type == "product" && isActive == true] | order(_createdAt desc) [0] {
+      _id,
+      name,
+      images[] {
+        asset-> {
+          _id,
+          url
+        },
+        alt
+      },
+      sizes,
+      shopifyCheckoutUrl,
+      isActive
     }`
   )
   return results || null
