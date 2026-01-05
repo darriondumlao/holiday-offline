@@ -105,7 +105,7 @@ export default function GuitarHeroModal({
         <div className='absolute inset-0 bg-black/60' />
 
         {/* Modal */}
-        <div className='relative w-[320px] sm:w-[380px] select-none'>
+        <div className='relative w-[260px] sm:w-[380px] select-none'>
           {/* Blue Header */}
           <div className='bg-blue-600 px-2 py-1 flex items-center justify-between rounded-t-sm'>
             <h2 className='text-white font-bold text-xs'>
@@ -132,7 +132,7 @@ export default function GuitarHeroModal({
           </div>
 
           {/* Content Area */}
-          <div className='bg-gray-200 px-3 py-4 flex flex-col items-center justify-center min-h-[280px]'>
+          <div className='bg-gray-200 px-3 py-3 flex flex-col items-center justify-center min-h-[220px] sm:min-h-[280px]'>
             {showForm && !isSuccess ? (
               <form onSubmit={handleSubmit} className='w-full space-y-3 px-2'>
                 <input
@@ -162,13 +162,9 @@ export default function GuitarHeroModal({
                 </button>
               </form>
             ) : (
-              <div className='relative w-full h-[250px]'>
+              <div className='relative w-full h-[180px] sm:h-[250px]'>
                 <Image
-                  src={
-                    isSuccess
-                      ? '/finalcorrection.jpeg'
-                      : '/finalcorrection.JPEG'
-                  }
+                  src={isSuccess ? '/gh-sucess.jpeg' : '/finalcorrection.jpeg'}
                   alt={
                     isSuccess
                       ? 'Registration Success'
