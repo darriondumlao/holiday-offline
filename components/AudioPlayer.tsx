@@ -1,14 +1,38 @@
 'use client'
 
-import { useState, useRef, useEffect, memo } from 'react'
+import { useState, useRef, useEffect, memo, useImperativeHandle, forwardRef } from 'react'
 
-function AudioPlayer() {
+export interface AudioPlayerHandle {
+  mute: () => void
+  unmute: () => void
+  isCurrentlyPlaying: () => boolean
+}
+
+const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
   const [isOpen, setIsOpen] = useState(false)
   const [volume, setVolume] = useState(0.3)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [wasPlayingBeforeMute, setWasPlayingBeforeMute] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    mute: () => {
+      if (audioRef.current) {
+        setWasPlayingBeforeMute(isPlaying)
+        audioRef.current.pause()
+        setIsPlaying(false)
+      }
+    },
+    unmute: () => {
+      if (audioRef.current && wasPlayingBeforeMute) {
+        audioRef.current.play().catch(console.error)
+        setIsPlaying(true)
+      }
+    },
+    isCurrentlyPlaying: () => isPlaying,
+  }))
 
   useEffect(() => {
     if (audioRef.current) {
@@ -130,6 +154,6 @@ function AudioPlayer() {
       </div>
     </>
   )
-}
+})
 
 export default memo(AudioPlayer)

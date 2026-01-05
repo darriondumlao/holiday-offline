@@ -2,11 +2,12 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
-import AudioPlayer from '@/components/AudioPlayer'
+import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
 import BouncingDownloadModal from '@/components/BouncingDownloadModal'
 import OfflineModal from '@/components/OfflineModal'
 import ProductModal from '@/components/ProductModal'
 import ImageSlideshow from '@/components/ImageSlideshow'
+import GuitarHeroModal from '@/components/GuitarHeroModal'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -32,6 +33,8 @@ export default function Home() {
   } | null>(null)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
   const [showProductModal, setShowProductModal] = useState(false)
+  const [showGuitarHeroModal, setShowGuitarHeroModal] = useState(false)
+  const audioPlayerRef = useRef<AudioPlayerHandle>(null)
 
   useEffect(() => {
     // Show logo as spotlight starts to shine
@@ -88,6 +91,25 @@ export default function Home() {
       return () => clearTimeout(offlineTimer)
     }
   }, [showDownloadModal])
+
+  // Show Guitar Hero modal after spotlight animation completes and content is fully visible
+  useEffect(() => {
+    if (!showSpotlight && showContent) {
+      const guitarHeroTimer = setTimeout(() => {
+        setShowGuitarHeroModal(true)
+      }, 2000)
+
+      return () => clearTimeout(guitarHeroTimer)
+    }
+  }, [showSpotlight, showContent])
+
+  const handleGuitarHeroSuccessAudioStart = () => {
+    audioPlayerRef.current?.mute()
+  }
+
+  const handleGuitarHeroSuccessAudioStop = () => {
+    audioPlayerRef.current?.unmute()
+  }
 
   const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -191,7 +213,7 @@ export default function Home() {
   return (
     <div className='fixed inset-0 bg-black overflow-y-auto overflow-x-hidden scroll-smooth'>
       {/* Audio Player */}
-      <AudioPlayer />
+      <AudioPlayer ref={audioPlayerRef} />
 
       {/* Bouncing Download Modal */}
       {showDownloadModal && downloadModalData && (
@@ -205,13 +227,21 @@ export default function Home() {
         />
       )}
 
-      {/* {showOfflineModal && <OfflineModal onUnlock={handleUnlockProduct} />}
-
+      {/* {showOfflineModal && <OfflineModal onUnlock={handleUnlockProduct} />} */}
 
       <ProductModal
         isOpen={showProductModal}
         onClose={handleCloseProductModal}
-      /> */}
+      />
+
+      {/* Guitar Hero Competition Modal */}
+      {showGuitarHeroModal && (
+        <GuitarHeroModal
+          onClose={() => setShowGuitarHeroModal(false)}
+          onSuccessAudioStart={handleGuitarHeroSuccessAudioStart}
+          onSuccessAudioStop={handleGuitarHeroSuccessAudioStop}
+        />
+      )}
 
       {/* Spotlight Effect */}
       {showSpotlight && (
