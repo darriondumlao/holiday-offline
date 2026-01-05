@@ -165,7 +165,9 @@ export default function GuitarHeroModal({
               <div className='relative w-full h-[250px]'>
                 <Image
                   src={
-                    isSuccess ? '/gh-sucess.jpeg' : '/GUITARHEROFLYER 2.JPEG'
+                    isSuccess
+                      ? '/finalcorrection.jpeg'
+                      : '/finalcorrection.JPEG'
                   }
                   alt={
                     isSuccess
