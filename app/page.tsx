@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
 import BouncingDownloadModal from '@/components/BouncingDownloadModal'
 import OfflineModal from '@/components/OfflineModal'
@@ -271,91 +272,104 @@ export default function Home() {
               />
             </div>
 
-            {/* Question - smaller and dims when subscribe is open */}
-            <h1
-              className={`text-white text-xs sm:text-sm tracking-widest font-light ${
-                !showSubscribe
-                  ? 'opacity-10'
-                  : showContent
-                    ? 'opacity-100'
-                    : 'opacity-0'
-              }`}
-            >
-              Q: what would you miss tomorrow?
-            </h1>
-
-            {/* Answer Form - smaller and dims when subscribe is open */}
-            <form
-              onSubmit={handleAnswerSubmit}
-              className={`w-full max-w-xs ${
-                !showSubscribe
-                  ? 'opacity-10'
-                  : showContent
-                    ? 'opacity-100'
-                    : 'opacity-0'
-              }`}
-            >
-              {answerSuccess ? (
-                <p className='text-green-500 text-xs py-2 animate-fade-in'>
-                  Thank you for sharing
-                </p>
-              ) : answerError ? (
-                <p className='text-yellow-500 text-xs py-2 animate-fade-in break-words'>
-                  {answerError}
-                </p>
-              ) : (
-                <div className='relative'>
-                  <input
-                    type='text'
-                    value={answer}
-                    onChange={(e) => setAnswer(e.target.value)}
-                    placeholder='type your answer here'
-                    className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
-                    disabled={isSubmittingAnswer || !showSubscribe}
-                  />
-                  {answer.trim() && showSubscribe && (
-                    <button
-                      type='submit'
-                      disabled={isSubmittingAnswer}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-400 transition-all ${
-                        isSubmittingAnswer
-                          ? 'opacity-50 scale-95'
-                          : 'opacity-100 scale-100'
-                      }`}
-                    >
-                      <svg
-                        xmlns='http://www.w3.org/2000/svg'
-                        viewBox='0 0 24 24'
-                        fill='currentColor'
-                        className='w-5 h-5'
-                      >
-                        <path d='M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z' />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              )}
-            </form>
-
-            {/* Subscribe Section */}
+            {/* Q&A and Subscribe Section - Shared Position */}
             <div
-              className={`w-full max-w-lg transition-opacity duration-1200 ease-out ${
+              className={`w-full max-w-lg relative transition-opacity duration-1200 ease-out ${
                 showContent ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: showContent ? '2500ms' : '0ms' }}
             >
-              {showSubscribe ? (
+              {/* Question and Answer Section */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: showSubscribe ? 1 : 0,
+                  pointerEvents: showSubscribe ? 'auto' : 'none'
+                }}
+                transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                className='flex flex-col items-center space-y-6'
+              >
+                <h1 className='text-white text-xs sm:text-sm tracking-widest font-light'>
+                  Q: what would you miss tomorrow?
+                </h1>
+
+                <form onSubmit={handleAnswerSubmit} className='w-full max-w-xs'>
+                  {answerSuccess ? (
+                    <p className='text-green-500 text-xs py-2 animate-fade-in'>
+                      Thank you for sharing
+                    </p>
+                  ) : answerError ? (
+                    <p className='text-yellow-500 text-xs py-2 animate-fade-in break-words'>
+                      {answerError}
+                    </p>
+                  ) : (
+                    <div className='relative'>
+                      <input
+                        type='text'
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder='type your answer here'
+                        className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                        disabled={isSubmittingAnswer || !showSubscribe}
+                      />
+                      {answer.trim() && showSubscribe && (
+                        <button
+                          type='submit'
+                          disabled={isSubmittingAnswer}
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-400 transition-all ${
+                            isSubmittingAnswer
+                              ? 'opacity-50 scale-95'
+                              : 'opacity-100 scale-100'
+                          }`}
+                        >
+                          <svg
+                            xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 24 24'
+                            fill='currentColor'
+                            className='w-5 h-5'
+                          >
+                            <path d='M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z' />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </form>
+
                 <button
                   onClick={() => setShowSubscribe(false)}
                   className='text-white border-b border-gray-600 hover:border-gray-400 transition-colors tracking-widest text-xs sm:text-sm pb-1'
                 >
                   subscribe
                 </button>
-              ) : (
-                <div className='relative'>
-                  <button
+              </motion.div>
+
+              {/* Subscribe Form - Appears in same position */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: !showSubscribe ? 1 : 0,
+                  pointerEvents: !showSubscribe ? 'auto' : 'none'
+                }}
+                transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                className='absolute inset-0 flex items-center justify-center'
+              >
+                <motion.div
+                  initial={false}
+                  animate={{
+                    backgroundColor: !showSubscribe ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                    borderRadius: 12,
+                    padding: !showSubscribe ? 24 : 0,
+                  }}
+                  transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                  className='relative w-full max-w-xs'
+                >
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: !showSubscribe ? 1 : 0 }}
+                    transition={{ duration: 0.3, delay: !showSubscribe ? 0.5 : 0 }}
                     onClick={() => setShowSubscribe(true)}
-                    className='absolute -top-2 -right-2 text-gray-500 hover:text-gray-300 transition-colors'
+                    className='absolute -top-2 -right-2 text-gray-500 hover:text-gray-300 transition-colors z-10'
                     type='button'
                   >
                     <svg
@@ -370,48 +384,68 @@ export default function Home() {
                         clipRule='evenodd'
                       />
                     </svg>
-                  </button>
+                  </motion.button>
                   {subscribeSuccess ? (
-                    <p className='text-green-500 text-xs py-2 animate-fade-in'>
-                      successfully subscribed!
-                    </p>
-                  ) : (
-                    <form
-                      onSubmit={handleSubscribeSubmit}
-                      className='space-y-4 animate-fade-in'
+                    <motion.p
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className='text-green-500 text-xs py-2 text-center'
                     >
-                      <input
-                        type='email'
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder='email address'
-                        className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
-                        disabled={isSubmittingSubscribe}
-                      />
-                      <input
-                        type='tel'
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder='phone number'
-                        className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
-                        disabled={isSubmittingSubscribe}
-                      />
+                      successfully subscribed!
+                    </motion.p>
+                  ) : (
+                    <form onSubmit={handleSubscribeSubmit} className='space-y-4'>
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
+                        transition={{ duration: 0.4, delay: !showSubscribe ? 0.15 : 0, ease: [0.25, 0.1, 0.25, 1] }}
+                      >
+                        <input
+                          type='email'
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder='email address'
+                          className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                          disabled={isSubmittingSubscribe || showSubscribe}
+                        />
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
+                        transition={{ duration: 0.4, delay: !showSubscribe ? 0.3 : 0, ease: [0.25, 0.1, 0.25, 1] }}
+                      >
+                        <input
+                          type='tel'
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder='phone number'
+                          className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                          disabled={isSubmittingSubscribe || showSubscribe}
+                        />
+                      </motion.div>
                       {subscribeError && (
-                        <p className='text-yellow-500 text-xs'>
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className='text-yellow-500 text-xs text-center'
+                        >
                           {subscribeError}
-                        </p>
+                        </motion.p>
                       )}
-                      <button
+                      <motion.button
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
+                        transition={{ duration: 0.4, delay: !showSubscribe ? 0.45 : 0, ease: [0.25, 0.1, 0.25, 1] }}
                         type='submit'
-                        disabled={isSubmittingSubscribe}
-                        className='text-blue-500 hover:text-blue-400 transition-colors tracking-widest text-xs disabled:opacity-50'
+                        disabled={isSubmittingSubscribe || showSubscribe}
+                        className='w-full text-blue-500 hover:text-blue-400 transition-colors tracking-widest text-xs disabled:opacity-50'
                       >
                         {isSubmittingSubscribe ? 'sending...' : 'submit'}
-                      </button>
+                      </motion.button>
                     </form>
                   )}
-                </div>
-              )}
+                </motion.div>
+              </motion.div>
             </div>
           </div>
 

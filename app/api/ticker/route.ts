@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getTickerMessages } from '@/lib/sanity'
 
+// Cache for 1 hour, revalidated on-demand via webhook
+export const revalidate = 3600
+
 export async function GET() {
   try {
     const messages = await getTickerMessages()

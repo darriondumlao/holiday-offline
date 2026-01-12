@@ -20,7 +20,7 @@ export default function TickerHeader() {
     return () => clearTimeout(timer)
   }, [])
 
-  // Fetch ticker messages
+  // Fetch ticker messages once on mount (cache is revalidated via webhook)
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -35,9 +35,6 @@ export default function TickerHeader() {
     }
 
     fetchMessages()
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchMessages, 30000)
-    return () => clearInterval(interval)
   }, [])
 
   if (messages.length === 0) return null
