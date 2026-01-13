@@ -20,6 +20,7 @@ export default function ImageSlideshow({
   const [images, setImages] = useState<SlideImage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     skipSnaps: false,
@@ -55,6 +56,22 @@ export default function ImageSlideshow({
 
   const scrollNext = useCallback(() => {
     if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
+
+  // Track current slide index
+  useEffect(() => {
+    if (!emblaApi) return
+
+    const onSelect = () => {
+      setCurrentIndex(emblaApi.selectedScrollSnap())
+    }
+
+    emblaApi.on('select', onSelect)
+    onSelect() // Set initial index
+
+    return () => {
+      emblaApi.off('select', onSelect)
+    }
   }, [emblaApi])
 
   // Keyboard navigation
@@ -151,6 +168,13 @@ export default function ImageSlideshow({
               />
             </svg>
           </button>
+        </div>
+
+        {/* Image Counter */}
+        <div className='text-center mt-6'>
+          <span className='text-white/60 text-sm tracking-widest'>
+            {currentIndex + 1} / {images.length}
+          </span>
         </div>
       </div>
     </div>
