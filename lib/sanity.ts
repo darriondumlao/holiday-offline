@@ -52,6 +52,25 @@ export interface Product {
   isActive: boolean
 }
 
+// Limited Drop Timer Interface
+export interface SizeTimer {
+  _key: string
+  size: string
+  intervalSeconds: number
+  startValue: number
+  currentValue?: number
+  soldOut: boolean
+}
+
+export interface LimitedDrop {
+  _id: string
+  productId?: { _ref: string }
+  dropName: string
+  isActive: boolean
+  startedAt?: string
+  sizeTimers: SizeTimer[]
+}
+
 // Holiday4Nick Schema Interfaces
 export interface Lookbook {
   _id: string
@@ -291,6 +310,59 @@ export async function getActiveProduct(): Promise<Product | null> {
       },
       sizes,
       shopifyCheckoutUrl,
+      isActive
+    }`
+  )
+  return results || null
+}
+
+// Get active limited drop
+export async function getActiveLimitedDrop(): Promise<LimitedDrop | null> {
+  const results = await sanityClient.fetch(
+    `*[_type == "limitedDrop" && isActive == true] | order(_createdAt desc) [0] {
+      _id,
+      dropName,
+      isActive,
+      startedAt,
+      sizeTimers[] {
+        _key,
+        size,
+        intervalSeconds,
+        startValue,
+        currentValue,
+        soldOut
+      }
+    }`
+  )
+  return results || null
+}
+
+// Update limited drop size timer values
+export async function updateLimitedDropTimers(
+  dropId: string,
+  sizeTimers: SizeTimer[]
+): Promise<void> {
+  await sanityClient
+    .patch(dropId)
+    .set({ sizeTimers })
+    .commit()
+}
+
+// Site Audio Interface
+export interface SiteAudio {
+  _id: string
+  title: string
+  audioUrl: string
+  isActive: boolean
+}
+
+// Get active site background audio
+export async function getActiveSiteAudio(): Promise<SiteAudio | null> {
+  const results = await sanityClient.fetch(
+    `*[_type == "siteAudio" && isActive == true] | order(_createdAt desc) [0] {
+      _id,
+      title,
+      "audioUrl": audioFile.asset->url,
       isActive
     }`
   )

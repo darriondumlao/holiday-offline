@@ -1,0 +1,363 @@
+[
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "max",
+                "constraint": 200
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "text",
+        "type": "string",
+        "title": "Message Text"
+      },
+      {
+        "initialValue": true,
+        "description": "Only active messages will be displayed in the ticker",
+        "name": "isActive",
+        "type": "boolean",
+        "title": "Active"
+      },
+      {
+        "initialValue": 0,
+        "description": "Lower numbers appear first",
+        "name": "order",
+        "type": "number",
+        "title": "Display Order"
+      }
+    ],
+    "name": "tickerMessage",
+    "type": "document"
+  },
+  {
+    "fields": [
+      {
+        "initialValue": "Content Available",
+        "description": "Title shown in the modal (e.g., \"Content Available\")",
+        "name": "title",
+        "type": "string",
+        "title": "Modal Title"
+      },
+      {
+        "initialValue": "Do your hands or your eyes create the moments people will remember you for?",
+        "description": "The main question displayed in the modal",
+        "name": "questionText",
+        "type": "text"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "The image that users can download",
+        "name": "downloadableImage",
+        "type": "image"
+      },
+      {
+        "initialValue": "holiday-content",
+        "description": "Name for the downloaded file (without extension)",
+        "name": "downloadFileName",
+        "type": "string"
+      },
+      {
+        "initialValue": true,
+        "description": "Enable/disable the modal from appearing",
+        "name": "isActive",
+        "type": "boolean",
+        "title": "Active"
+      },
+      {
+        "initialValue": 4,
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "min",
+                "constraint": 0
+              },
+              {
+                "flag": "max",
+                "constraint": 30
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "How many seconds to wait before showing the modal",
+        "name": "delaySeconds",
+        "type": "number",
+        "title": "Delay Before Showing (seconds)"
+      }
+    ],
+    "name": "downloadableContent",
+    "type": "document",
+    "title": "Downloadable Content Modal"
+  },
+  {
+    "fields": [
+      {
+        "description": "The product this drop timer is for",
+        "to": [
+          {
+            "type": "product"
+          }
+        ],
+        "name": "productId",
+        "type": "reference",
+        "title": "Product Reference"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Name for this limited drop (e.g., \"Winter 2025 Drop\")",
+        "name": "dropName",
+        "type": "string"
+      },
+      {
+        "initialValue": true,
+        "description": "Is this drop currently active?",
+        "name": "isActive",
+        "type": "boolean",
+        "title": "Drop Active"
+      },
+      {
+        "description": "When the drop countdown started (set automatically when activated)",
+        "name": "startedAt",
+        "type": "datetime",
+        "title": "Drop Started At"
+      },
+      {
+        "of": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "size",
+                "type": "string"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      },
+                      {
+                        "flag": "min",
+                        "constraint": 1
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "description": "How many seconds between each countdown tick (e.g., 2 = counts down 1 every 2 seconds)",
+                "name": "intervalSeconds",
+                "type": "number",
+                "title": "Countdown Interval (seconds)"
+              },
+              {
+                "initialValue": 100,
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      },
+                      {
+                        "flag": "min",
+                        "constraint": 1
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "description": "Initial countdown value (default 100)",
+                "name": "startValue",
+                "type": "number",
+                "title": "Starting Value"
+              },
+              {
+                "description": "Current countdown value (updated by the system)",
+                "name": "currentValue",
+                "type": "number"
+              },
+              {
+                "initialValue": false,
+                "description": "Is this size sold out?",
+                "name": "soldOut",
+                "type": "boolean"
+              }
+            ],
+            "type": "object",
+            "name": "sizeTimer"
+          }
+        ],
+        "name": "sizeTimers",
+        "type": "array",
+        "title": "Size Timer Configuration"
+      }
+    ],
+    "name": "limitedDrop",
+    "type": "document",
+    "title": "Limited Drop Timer"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "name",
+        "type": "string",
+        "title": "Product Name"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 1
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "of": [
+          {
+            "options": {
+              "hotspot": true
+            },
+            "fields": [
+              {
+                "name": "alt",
+                "type": "string",
+                "title": "Alternative Text"
+              }
+            ],
+            "type": "image"
+          }
+        ],
+        "name": "images",
+        "type": "array",
+        "title": "Product Images"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 1
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "List of available sizes (e.g., XS, S, M, L, XL)",
+        "of": [
+          {
+            "type": "string"
+          }
+        ],
+        "name": "sizes",
+        "type": "array",
+        "title": "Available Sizes"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Base Shopify checkout URL (variant will be appended)",
+        "name": "shopifyCheckoutUrl",
+        "type": "url",
+        "title": "Shopify Checkout Base URL"
+      },
+      {
+        "initialValue": true,
+        "description": "Show this product in the offline unlock section",
+        "name": "isActive",
+        "type": "boolean",
+        "title": "Active"
+      }
+    ],
+    "name": "product",
+    "type": "document"
+  }
+]

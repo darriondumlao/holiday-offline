@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import RetroLoader from './RetroLoader'
 
 interface ProductData {
   name: string
@@ -69,8 +70,9 @@ export default function ProductCheckout({ productId }: ProductCheckoutProps) {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-sm tracking-widest animate-pulse">
+      <div className="w-full min-h-screen bg-black flex flex-col items-center justify-center gap-4">
+        <RetroLoader size="lg" />
+        <div className="text-white text-sm tracking-widest">
           Loading...
         </div>
       </div>

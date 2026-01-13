@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Classic Mac OS pointer cursor - pixel art style -->
+  <!-- White outline -->
+  <polygon points="1,1 1,19 5,15 8,21 11,20 8,14 13,14" fill="white"/>
+  <!-- Black fill -->
+  <polygon points="2,2 2,17 5,14 7,19 9,18 7,13 11,13" fill="black"/>
+</svg>

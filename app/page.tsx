@@ -2,13 +2,14 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
 import BouncingDownloadModal from '@/components/BouncingDownloadModal'
 import OfflineModal from '@/components/OfflineModal'
 import ProductModal from '@/components/ProductModal'
 import ImageSlideshow from '@/components/ImageSlideshow'
 import GuitarHeroModal from '@/components/GuitarHeroModal'
+import RetroProductPage from '@/components/RetroProductPage'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -35,6 +36,8 @@ export default function Home() {
   const [showOfflineModal, setShowOfflineModal] = useState(false)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showGuitarHeroModal, setShowGuitarHeroModal] = useState(false)
+  const [showRetroProductPage, setShowRetroProductPage] = useState(false)
+  const [dropIsLive, setDropIsLive] = useState(false)
   const audioPlayerRef = useRef<AudioPlayerHandle>(null)
 
   useEffect(() => {
@@ -103,6 +106,28 @@ export default function Home() {
       return () => clearTimeout(guitarHeroTimer)
     }
   }, [showSpotlight, showContent])
+
+  // Check if a limited drop is live (only once on page load)
+  useEffect(() => {
+    const checkDropStatus = async () => {
+      try {
+        const response = await fetch('/api/limited-drop')
+        const data = await response.json()
+
+        // Drop is live if it exists, is active, and has a startedAt timestamp
+        if (data.drop && data.drop.isActive && data.drop.startedAt) {
+          setDropIsLive(true)
+        } else {
+          setDropIsLive(false)
+        }
+      } catch (error) {
+        console.error('Error checking drop status:', error)
+        setDropIsLive(false)
+      }
+    }
+
+    checkDropStatus()
+  }, [])
 
   const handleGuitarHeroSuccessAudioStart = () => {
     audioPlayerRef.current?.mute()
@@ -244,6 +269,11 @@ export default function Home() {
         />
       )}
 
+      {/* Retro Product Page - Conditionally Rendered */}
+      {showRetroProductPage && (
+        <RetroProductPage onClose={() => setShowRetroProductPage(false)} />
+      )}
+
       {/* Spotlight Effect */}
       {showSpotlight && (
         <div className='absolute inset-0 z-50 pointer-events-none'>
@@ -342,6 +372,16 @@ export default function Home() {
                 >
                   subscribe
                 </button>
+
+                {/* Shop Button - Only shows when a limited drop is live */}
+                {dropIsLive && (
+                  <button
+                    onClick={() => setShowRetroProductPage(true)}
+                    className='text-yellow-400 border-b border-yellow-600 hover:border-yellow-400 transition-colors tracking-widest text-xs sm:text-sm pb-1 animate-pulse'
+                  >
+                    shop
+                  </button>
+                )}
               </motion.div>
 
               {/* Subscribe Form - Appears in same position */}

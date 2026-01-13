@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
+import RetroLoader from './RetroLoader'
 
 interface SlideImage {
   url: string
@@ -72,8 +73,9 @@ export default function ImageSlideshow({
 
   if (loading) {
     return (
-      <div className='w-full min-h-screen bg-black flex items-center justify-center'>
-        <div className='text-white text-sm tracking-widest animate-pulse'>
+      <div className='w-full min-h-screen bg-black flex flex-col items-center justify-center gap-4'>
+        <RetroLoader size='lg' />
+        <div className='text-white text-sm tracking-widest'>
           Loading slideshow...
         </div>
       </div>

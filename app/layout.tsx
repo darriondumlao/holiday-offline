@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import TickerHeader from "@/components/TickerHeader";
+
+// Retro ad font for product pages
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas-neue",
+});
 
 export const metadata: Metadata = {
   title: "holiday is offline",
@@ -43,7 +51,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://a.klaviyo.com" />
         <link rel="dns-prefetch" href="https://sheets.googleapis.com" />
       </head>
-      <body className="antialiased">
+      <body className={`antialiased ${bebasNeue.variable}`}>
         <TickerHeader />
         {children}
       </body>

@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-bebas: var(--font-bebas-neue);
 }
 
 html, body {
@@ -159,6 +160,26 @@ html, body {
 /* Improve touch performance on mobile */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Pointer cursor for clickable elements */
+a,
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Not-allowed cursor for disabled elements */
+button:disabled,
+button[disabled],
+.cursor-not-allowed {
+  cursor: not-allowed;
 }
 
 /* Better slider thumb for mobile */

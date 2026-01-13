@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import RetroLoader from './RetroLoader'
 
 interface VariantAvailability {
   id?: string
@@ -19,6 +20,24 @@ interface ProductData {
   shopifyCheckoutUrl?: string
 }
 
+interface SizeTimer {
+  _key: string
+  size: string
+  intervalSeconds: number
+  startValue: number
+  currentValue?: number
+  soldOut: boolean
+}
+
+interface LimitedDrop {
+  _id: string
+  dropName: string
+  isActive: boolean
+  startedAt?: string
+  sizeTimers: SizeTimer[]
+  allSoldOut?: boolean
+}
+
 interface ProductModalProps {
   isOpen: boolean
   onClose: () => void
@@ -29,6 +48,9 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [limitedDrop, setLimitedDrop] = useState<LimitedDrop | null>(null)
+  const [countdowns, setCountdowns] = useState<Record<string, number>>({})
+  const timerIntervalsRef = useRef<NodeJS.Timeout[]>([])
 
   const colorPalette = ['#ef4444', '#f59e0b', '#fbbf24', '#22c55e', '#10b981', '#0ea5e9']
 
@@ -44,8 +66,22 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
     ],
   }
 
+  // Clear all intervals on cleanup
   useEffect(() => {
-    const fetchProduct = async () => {
+    return () => {
+      timerIntervalsRef.current.forEach(clearInterval)
+      timerIntervalsRef.current = []
+    }
+  }, [])
+
+  // Fetch product and limited drop data
+  useEffect(() => {
+    if (!isOpen) return
+
+    const fetchData = async () => {
+      setLoading(true)
+
+      // Fetch product
       try {
         const response = await fetch('/api/product')
         const data = await response.json()
@@ -82,13 +118,56 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
         console.error('Error fetching product:', err)
         setProduct(fallbackProduct)
         setSelectedSize(fallbackProduct.variants[0].size)
-      } finally {
-        setLoading(false)
       }
+
+      // Fetch limited drop
+      try {
+        const response = await fetch('/api/limited-drop')
+        const data = await response.json()
+
+        if (data.drop && data.drop.sizeTimers) {
+          setLimitedDrop(data.drop)
+
+          // Initialize countdowns from the API response
+          const initialCountdowns: Record<string, number> = {}
+          data.drop.sizeTimers.forEach((timer: SizeTimer) => {
+            initialCountdowns[timer.size.toLowerCase()] = timer.currentValue ?? timer.startValue
+          })
+          setCountdowns(initialCountdowns)
+
+          // Clear existing intervals
+          timerIntervalsRef.current.forEach(clearInterval)
+          timerIntervalsRef.current = []
+
+          // Start countdown intervals for each size
+          data.drop.sizeTimers.forEach((timer: SizeTimer) => {
+            if (timer.soldOut || (timer.currentValue !== undefined && timer.currentValue <= 0)) return
+
+            const interval = setInterval(() => {
+              setCountdowns(prev => {
+                const key = timer.size.toLowerCase()
+                const currentVal = prev[key] ?? 0
+                const newVal = Math.max(0, currentVal - 1)
+                return { ...prev, [key]: newVal }
+              })
+            }, timer.intervalSeconds * 1000)
+
+            timerIntervalsRef.current.push(interval)
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching limited drop:', err)
+      }
+
+      setLoading(false)
     }
 
-    if (isOpen) {
-      fetchProduct()
+    fetchData()
+
+    // Cleanup intervals when modal closes
+    return () => {
+      timerIntervalsRef.current.forEach(clearInterval)
+      timerIntervalsRef.current = []
     }
   }, [isOpen])
 
@@ -105,9 +184,59 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
     }
   }, [isOpen])
 
+  // Check if a size is sold out (countdown reached 0)
+  const isSizeSoldOut = (size: string): boolean => {
+    if (!limitedDrop) return false
+    const sizeKey = size.toLowerCase()
+    const countdownValue = countdowns[sizeKey]
+
+    if (countdownValue !== undefined) {
+      return countdownValue <= 0
+    }
+
+    // Fall back to checking the limitedDrop data
+    const timer = limitedDrop.sizeTimers?.find(t => t.size.toLowerCase() === sizeKey)
+    if (timer) {
+      return timer.soldOut || (timer.currentValue !== undefined && timer.currentValue <= 0)
+    }
+
+    return false
+  }
+
+  // Get countdown value for a size
+  const getCountdownValue = (size: string): number | null => {
+    if (!limitedDrop) return null
+
+    const sizeKey = size.toLowerCase()
+    const countdownValue = countdowns[sizeKey]
+
+    if (countdownValue !== undefined) {
+      return countdownValue
+    }
+
+    const timer = limitedDrop.sizeTimers?.find(t => t.size.toLowerCase() === sizeKey)
+    if (timer) {
+      return timer.currentValue ?? timer.startValue
+    }
+
+    return null
+  }
+
+  // Check if all sizes are sold out
+  const allSizesSoldOut = (): boolean => {
+    if (!product?.variants || !limitedDrop) return false
+    return product.variants.every(v => isSizeSoldOut(v.size))
+  }
+
   const handleCheckout = () => {
     if (!product || !selectedSize) return
-    const variant = product.variants.find((v) => v.size === selectedSize)
+
+    // Check if selected size is sold out
+    if (isSizeSoldOut(selectedSize)) {
+      return
+    }
+
+    const variant = product.variants.find(v => v.size === selectedSize)
     const checkoutUrl = product.shopifyCheckoutUrl
       ? `${product.shopifyCheckoutUrl}?variant=${variant?.id || selectedSize}`
       : '#'
@@ -159,12 +288,37 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
 
           {/* Content */}
           {loading || !product ? (
-            <div className="flex items-center justify-center py-16 text-black font-mono tracking-wider">
-              Loading product...
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <RetroLoader size="lg" />
+              <span className="text-black font-mono tracking-wider">Loading product...</span>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-16 text-red-500 font-mono tracking-wider">
               {error}
+            </div>
+          ) : allSizesSoldOut() ? (
+            // All sizes sold out view
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="flex items-center justify-center">
+                <div className="relative w-full max-w-[360px] aspect-square bg-[#e7e0d6] border-2 border-[#bfb6a6] shadow-inner opacity-50 grayscale">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.title}
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+              <div className="text-center py-8">
+                <div className="text-4xl font-mono text-red-600 mb-4">SOLD OUT</div>
+                <p className="text-black/60 font-mono text-sm">
+                  This limited edition drop has ended.
+                </p>
+                <p className="text-black/40 font-mono text-xs mt-2">
+                  All sizes are no longer available.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="p-6 md:p-8 space-y-6">
@@ -181,21 +335,29 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
                 </div>
               </div>
 
+              {/* Limited Drop Banner */}
+              {limitedDrop && (
+                <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-4 py-2 text-center font-mono text-sm rounded">
+                  <span className="animate-pulse">LIMITED DROP</span> - Act fast, quantities are running out!
+                </div>
+              )}
+
               {/* Inventory by size */}
               <div className="space-y-4">
-                {product.variants
-                  .filter((v) => v.available != null)
-                  .map((variant, idx) => {
-                    const blocks = getBlocks(variant)
-                    if (blocks.length === 0) return null
+                {product.variants.map((variant, idx) => {
+                  const blocks = getBlocks(variant)
+                  const countdownValue = getCountdownValue(variant.size)
+                  const soldOut = isSizeSoldOut(variant.size)
 
-                    const sold = variant.sold || 0
-                    const total = blocks.length
-                    const availableColor =
-                      variant.color || colorPalette[idx % colorPalette.length]
+                  const sold = variant.sold || 0
+                  const total = blocks.length
+                  const availableColor =
+                    variant.color || colorPalette[idx % colorPalette.length]
 
-                    return (
-                      <div key={variant.size} className="space-y-2">
+                  return (
+                    <div key={variant.size} className={`space-y-2 ${soldOut ? 'opacity-50' : ''}`}>
+                      {/* Inventory blocks (if available) */}
+                      {blocks.length > 0 && (
                         <div className="flex items-center gap-3">
                           <div className="flex-1 flex items-center gap-1 flex-wrap">
                             {blocks.map((status, blockIdx) => (
@@ -213,34 +375,64 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
                             {sold}/{total} SOLD
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setSelectedSize(variant.size)}
-                            className={`flex-1 px-4 py-2 border-2 border-black text-lg font-mono lowercase shadow-[2px_2px_0_#bfb6a6] transition-all ${
-                              selectedSize === variant.size
-                                ? 'bg-white'
-                                : 'bg-[#e7e0d6] hover:bg-white'
+                      )}
+
+                      {/* Size button with countdown */}
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => !soldOut && setSelectedSize(variant.size)}
+                          disabled={soldOut}
+                          className={`flex-1 px-4 py-2 border-2 border-black text-lg font-mono lowercase shadow-[2px_2px_0_#bfb6a6] transition-all ${
+                            soldOut
+                              ? 'bg-gray-300 cursor-not-allowed line-through text-gray-500'
+                              : selectedSize === variant.size
+                              ? 'bg-white'
+                              : 'bg-[#e7e0d6] hover:bg-white'
+                          }`}
+                        >
+                          {variant.size}
+                          {soldOut && <span className="ml-2 text-red-600 no-underline">(SOLD OUT)</span>}
+                        </button>
+                      </div>
+
+                      {/* Countdown number - always show if limitedDrop exists */}
+                      {limitedDrop && (
+                        <div className="flex justify-center">
+                          <div
+                            className={`font-mono text-2xl font-bold transition-all duration-300 ${
+                              soldOut || countdownValue === 0
+                                ? 'text-red-600'
+                                : countdownValue !== null && countdownValue <= 10
+                                ? 'text-red-500 animate-pulse'
+                                : countdownValue !== null && countdownValue <= 30
+                                ? 'text-orange-500'
+                                : 'text-green-600'
                             }`}
                           >
-                            {variant.size}
-                          </button>
+                            {countdownValue ?? 0}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )}
+                    </div>
+                  )
+                })}
               </div>
 
               {/* Checkout */}
               <div className="pt-2">
                 <button
                   onClick={handleCheckout}
-                  disabled={!selectedSize}
-                  className="w-full bg-[#e7e0d6] hover:bg-white active:translate-y-[1px] border-2 border-black text-black font-mono text-lg py-3 shadow-[3px_3px_0_#bfb6a6] disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!selectedSize || isSizeSoldOut(selectedSize)}
+                  className={`w-full border-2 border-black font-mono text-lg py-3 shadow-[3px_3px_0_#bfb6a6] transition-all ${
+                    !selectedSize || isSizeSoldOut(selectedSize)
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-[#e7e0d6] hover:bg-white active:translate-y-[1px] text-black'
+                  }`}
                 >
-                  Add to cart & checkout
+                  {isSizeSoldOut(selectedSize) ? 'Size unavailable' : 'Add to cart & checkout'}
                 </button>
                 <p className="text-center text-xs text-black/60 font-mono mt-2">
-                  Checkout opens a new tab
+                  {limitedDrop ? 'Hurry! Numbers are counting down in real-time.' : 'Checkout opens a new tab'}
                 </p>
               </div>
             </div>

@@ -14,8 +14,25 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [wasPlayingBeforeMute, setWasPlayingBeforeMute] = useState(false)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Fetch audio URL from Sanity
+  useEffect(() => {
+    const fetchAudio = async () => {
+      try {
+        const response = await fetch('/api/site-audio')
+        const data = await response.json()
+        if (data.audio?.audioUrl) {
+          setAudioUrl(data.audio.audioUrl)
+        }
+      } catch (error) {
+        console.error('Error fetching site audio:', error)
+      }
+    }
+    fetchAudio()
+  }, [])
 
   useImperativeHandle(ref, () => ({
     mute: () => {
@@ -86,13 +103,16 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
     }
   }
 
+  // Don't render audio player if no audio URL
+  if (!audioUrl) {
+    return null
+  }
+
   return (
     <>
-      <audio ref={audioRef} loop preload="metadata">
-        <source src="/The Color Of The Fire.mp3" type="audio/mpeg" />
-      </audio>
+      <audio ref={audioRef} loop preload="metadata" src={audioUrl} />
 
-      <div className="fixed top-16 right-4 md:top-20 md:right-6 z-50" ref={containerRef}>
+      <div className="fixed top-12 right-4 md:top-14 md:right-6 z-50" ref={containerRef}>
         <div className="flex items-center gap-2">
           {/* Volume Slider - appears when open */}
           <div
@@ -126,7 +146,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
                 if (!isPlaying) togglePlay()
               }
             }}
-            className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors touch-manipulation"
+            className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center text-gray-400 hover:text-white transition-colors touch-manipulation cursor-pointer"
             aria-label="Audio controls"
           >
             {isMuted || !isPlaying ? (

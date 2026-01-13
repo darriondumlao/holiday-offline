@@ -1,5 +1,6 @@
 import { defineConfig } from 'sanity'
 import { structureTool } from 'sanity/structure'
+import { StartDropAction } from './sanity/actions/startDropAction'
 
 export default defineConfig({
   name: 'default',
@@ -8,6 +9,15 @@ export default defineConfig({
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
   basePath: '/studio',
   plugins: [structureTool()],
+  document: {
+    actions: (prev, context) => {
+      // Add StartDropAction for limitedDrop documents
+      if (context.schemaType === 'limitedDrop') {
+        return [StartDropAction, ...prev]
+      }
+      return prev
+    },
+  },
   schema: {
     types: [
       {
@@ -111,6 +121,115 @@ export default defineConfig({
               title: title,
               subtitle: subtitle ? '✓ Active' : '✗ Inactive',
               media: media,
+            }
+          },
+        },
+      },
+      {
+        name: 'limitedDrop',
+        title: 'Limited Drop Timer',
+        type: 'document',
+        fields: [
+          {
+            name: 'productId',
+            title: 'Product Reference',
+            type: 'reference',
+            to: [{ type: 'product' }],
+            description: 'The product this drop timer is for',
+          },
+          {
+            name: 'dropName',
+            title: 'Drop Name',
+            type: 'string',
+            description: 'Name for this limited drop (e.g., "Winter 2025 Drop")',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'isActive',
+            title: 'Drop Active',
+            type: 'boolean',
+            description: 'Is this drop currently active?',
+            initialValue: true,
+          },
+          {
+            name: 'startedAt',
+            title: 'Drop Started At',
+            type: 'datetime',
+            description: 'When the drop countdown started (set automatically when activated)',
+          },
+          {
+            name: 'sizeTimers',
+            title: 'Size Timer Configuration',
+            type: 'array',
+            of: [
+              {
+                type: 'object',
+                name: 'sizeTimer',
+                fields: [
+                  {
+                    name: 'size',
+                    title: 'Size',
+                    type: 'string',
+                    validation: (Rule) => Rule.required(),
+                  },
+                  {
+                    name: 'intervalSeconds',
+                    title: 'Countdown Interval (seconds)',
+                    type: 'number',
+                    description: 'How many seconds between each countdown tick (e.g., 2 = counts down 1 every 2 seconds)',
+                    validation: (Rule) => Rule.required().min(1),
+                  },
+                  {
+                    name: 'startValue',
+                    title: 'Starting Value',
+                    type: 'number',
+                    description: 'Initial countdown value (default 100)',
+                    initialValue: 100,
+                    validation: (Rule) => Rule.required().min(1),
+                  },
+                  {
+                    name: 'currentValue',
+                    title: 'Current Value',
+                    type: 'number',
+                    description: 'Current countdown value (updated by the system)',
+                  },
+                  {
+                    name: 'soldOut',
+                    title: 'Sold Out',
+                    type: 'boolean',
+                    description: 'Is this size sold out?',
+                    initialValue: false,
+                  },
+                ],
+                preview: {
+                  select: {
+                    size: 'size',
+                    interval: 'intervalSeconds',
+                    current: 'currentValue',
+                    soldOut: 'soldOut',
+                  },
+                  prepare(selection) {
+                    const { size, interval, current, soldOut } = selection
+                    return {
+                      title: `${size} - ${interval}s interval`,
+                      subtitle: soldOut ? '❌ SOLD OUT' : `Current: ${current ?? 100}`,
+                    }
+                  },
+                },
+              },
+            ],
+          },
+        ],
+        preview: {
+          select: {
+            title: 'dropName',
+            isActive: 'isActive',
+          },
+          prepare(selection) {
+            const { title, isActive } = selection
+            return {
+              title: title,
+              subtitle: isActive ? '🔥 LIVE' : '⏸ Inactive',
             }
           },
         },
