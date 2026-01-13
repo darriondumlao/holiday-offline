@@ -98,18 +98,17 @@ export default function ImageSlideshow({
         {/* Embla Carousel Container */}
         <div className='relative'>
           <div className='overflow-hidden' ref={emblaRef}>
-            <div className='flex'>
+            <div className='flex items-center'>
               {images.map((image, index) => (
-                <div key={index} className='flex-[0_0_100%] min-w-0 px-4'>
-                  <div className='relative aspect-[4/3] md:aspect-[16/10] w-full max-h-[70vh] bg-gray-900 rounded-lg overflow-hidden'>
-                    <Image
-                      src={image.url}
-                      alt={image.alt || `Slide ${index + 1}`}
-                      fill
-                      className='object-contain'
-                      priority={index === 0}
-                    />
-                  </div>
+                <div key={index} className='flex-[0_0_100%] min-w-0 px-4 flex justify-center'>
+                  <Image
+                    src={image.url}
+                    alt={image.alt || `Slide ${index + 1}`}
+                    width={1200}
+                    height={800}
+                    className='max-h-[80vh] w-auto h-auto object-contain rounded-lg'
+                    priority={index === 0}
+                  />
                 </div>
               ))}
             </div>
@@ -118,7 +117,7 @@ export default function ImageSlideshow({
           {/* Navigation Arrows */}
           <button
             onClick={scrollPrev}
-            className='absolute left-2 md:left-8 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white p-3 md:p-4 rounded-full transition-all z-10'
+            className='absolute left-2 md:left-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white p-3 md:p-4 transition-all z-10'
             aria-label='Previous image'
           >
             <svg
@@ -136,7 +135,7 @@ export default function ImageSlideshow({
           </button>
           <button
             onClick={scrollNext}
-            className='absolute right-2 md:right-8 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white p-3 md:p-4 rounded-full transition-all z-10'
+            className='absolute right-2 md:right-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white p-3 md:p-4 transition-all z-10'
             aria-label='Next image'
           >
             <svg

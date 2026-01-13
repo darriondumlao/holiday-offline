@@ -504,9 +504,9 @@ export default function Home() {
       </div>
 
       {/* Slideshow Section - Always visible, scrollable */}
-      {/* <div className='w-full'>
+      <div className='w-full'>
         <ImageSlideshow />
-      </div> */}
+      </div>
     </div>
   )
 }

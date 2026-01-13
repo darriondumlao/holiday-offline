@@ -1,7 +1,5 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-
 interface BouncingDownloadModalProps {
   title: string
   questionText: string
@@ -19,83 +17,6 @@ export default function BouncingDownloadModal({
   fileExtension,
   onClose,
 }: BouncingDownloadModalProps) {
-  const [position, setPosition] = useState({ x: 50, y: 50 })
-  const [velocity, setVelocity] = useState({ x: 3.5, y: 2.5 })
-  const [isPaused, setIsPaused] = useState(false)
-  const [topBoundary, setTopBoundary] = useState(0)
-  const modalRef = useRef<HTMLDivElement>(null)
-  const animationRef = useRef<number | undefined>(undefined)
-
-  // Measure header height so the modal never overlaps it
-  useEffect(() => {
-    const header = document.getElementById('ticker-header')
-    if (!header) return
-
-    const updateBoundary = () =>
-      setTopBoundary(header.getBoundingClientRect().height)
-    updateBoundary()
-
-    const resizeObserver = new ResizeObserver(updateBoundary)
-    resizeObserver.observe(header)
-
-    return () => resizeObserver.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (isPaused) return
-
-    const animate = () => {
-      setPosition((prev) => {
-        if (!modalRef.current) return prev
-
-        const modalWidth = modalRef.current.offsetWidth
-        const modalHeight = modalRef.current.offsetHeight
-        const viewportWidth = window.innerWidth
-        const viewportHeight = window.innerHeight
-
-        let newX = prev.x + velocity.x
-        let newY = prev.y + velocity.y
-        let newVelocityX = velocity.x
-        let newVelocityY = velocity.y
-
-        // Bounce off right or left edge
-        if (newX + modalWidth >= viewportWidth) {
-          newX = viewportWidth - modalWidth
-          newVelocityX = -Math.abs(velocity.x)
-        } else if (newX <= 0) {
-          newX = 0
-          newVelocityX = Math.abs(velocity.x)
-        }
-
-        // Bounce off bottom or top edge (respect top boundary beneath header)
-        if (newY + modalHeight >= viewportHeight) {
-          newY = viewportHeight - modalHeight
-          newVelocityY = -Math.abs(velocity.y)
-        } else if (newY <= topBoundary) {
-          newY = topBoundary
-          newVelocityY = Math.abs(velocity.y)
-        }
-
-        // Update velocity if it changed
-        if (newVelocityX !== velocity.x || newVelocityY !== velocity.y) {
-          setVelocity({ x: newVelocityX, y: newVelocityY })
-        }
-
-        return { x: newX, y: newY }
-      })
-
-      animationRef.current = requestAnimationFrame(animate)
-    }
-
-    animationRef.current = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
-    }
-  }, [velocity, isPaused, topBoundary])
-
   const handleDownload = async () => {
     try {
       // Fetch the file and trigger download
@@ -123,16 +44,17 @@ export default function BouncingDownloadModal({
     )
   }
 
+  const handleOffline = () => {
+    window.open(
+      'https://youtu.be/See0q6nZQZ8?si=LpaW5sQE2yh4a1Ym',
+      '_blank',
+      'noopener,noreferrer'
+    )
+  }
+
   return (
     <div
-      ref={modalRef}
-      className='fixed z-50 w-[280px] sm:w-[320px] select-none'
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-      }}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      className='fixed z-50 w-[280px] sm:w-[320px] select-none left-4 bottom-16'
     >
       {/* Blue Header */}
       <div className='bg-blue-600 px-2 py-1 flex items-center justify-between rounded-t-sm'>
@@ -178,7 +100,10 @@ export default function BouncingDownloadModal({
         >
           <span className='underline'>W</span>ho Am I
         </button>
-        <button className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'>
+        <button
+          onClick={handleOffline}
+          className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
+        >
           <span className='underline'>O</span>ffline
         </button>
       </div>
