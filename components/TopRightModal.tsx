@@ -3,31 +3,36 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 
-interface GuitarHeroModalProps {
+interface TopRightModalProps {
   onClose: () => void
   onSuccessAudioStart: () => void
   onSuccessAudioStop: () => void
 }
 
-export default function GuitarHeroModal({
+export default function TopRightModal({
   onClose,
   onSuccessAudioStart,
   onSuccessAudioStop,
-}: GuitarHeroModalProps) {
+}: TopRightModalProps) {
   const [showForm, setShowForm] = useState(false)
   const [phone, setPhone] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
   const successAudioRef = useRef<HTMLAudioElement>(null)
 
-  const handleRegisterClick = () => {
-    setShowForm(true)
-  }
+  // Trigger fade-in animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
-  const handleWhoAmI = () => {
+  const handleOffline = () => {
     window.open(
-      'https://youtu.be/Xkg7dp1QY9k?si=EuQIMvpoB_FmhR6d',
+      'https://holidaybrand.co',
       '_blank',
       'noopener,noreferrer'
     )
@@ -89,7 +94,10 @@ export default function GuitarHeroModal({
     if (isSuccess) {
       onSuccessAudioStop()
     }
-    onClose()
+    setIsVisible(false)
+    setTimeout(() => {
+      onClose()
+    }, 300)
   }
 
   return (
@@ -100,17 +108,16 @@ export default function GuitarHeroModal({
       </audio>
 
       {/* Modal Overlay */}
-      <div className='fixed inset-0 z-[100] flex items-start justify-end pt-24 pr-8'>
-        {/* Backdrop */}
-        <div className='absolute inset-0 bg-black/60' />
-
+      <div className='fixed z-[100] top-24 right-4 sm:right-8'>
         {/* Modal */}
-        <div className='relative w-[260px] sm:w-[380px] select-none'>
+        <div
+          className={`relative w-[260px] sm:w-[380px] select-none transform transition-all duration-500 ${
+            isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+          }`}
+        >
           {/* Blue Header */}
           <div className='bg-blue-600 px-2 py-1 flex items-center justify-between rounded-t-sm'>
-            <h2 className='text-white font-bold text-xs'>
-              Guitar Hero Competition
-            </h2>
+            <h2 className='text-white font-bold text-xs'>january 29th</h2>
             <button
               onClick={handleClose}
               className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
@@ -164,7 +171,11 @@ export default function GuitarHeroModal({
             ) : (
               <div className='relative w-full h-[180px] sm:h-[250px]'>
                 <Image
-                  src={isSuccess ? '/gh-sucess.jpeg' : '/finalcorrection.jpeg'}
+                  src={
+                    isSuccess
+                      ? '/gh-sucess.jpeg'
+                      : '/holiday-landing-updated.png'
+                  }
                   alt={
                     isSuccess
                       ? 'Registration Success'
@@ -180,20 +191,22 @@ export default function GuitarHeroModal({
           {/* Button Row */}
           <div className='bg-blue-600 px-1.5 py-1.5 flex items-center justify-between gap-1.5 rounded-b-sm'>
             <button
-              onClick={handleRegisterClick}
-              disabled={isSuccess}
-              className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              <span className='underline'>R</span>egister
-            </button>
-            <button
-              onClick={handleWhoAmI}
+              onClick={handleOffline}
               className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
             >
-              <span className='underline'>W</span>ho Am I
+go
             </button>
-            <button className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'>
-              <span className='underline'>O</span>ffline
+            <button
+              onClick={handleOffline}
+              className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
+            >
+to
+            </button>
+            <button
+              onClick={handleOffline}
+              className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
+            >
+offline
             </button>
           </div>
         </div>

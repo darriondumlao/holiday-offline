@@ -4,12 +4,13 @@ import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
-import BouncingDownloadModal from '@/components/BouncingDownloadModal'
+import BottomLeftModal from '@/components/BottomLeftModal'
 import OfflineModal from '@/components/OfflineModal'
 import ProductModal from '@/components/ProductModal'
 import ImageSlideshow from '@/components/ImageSlideshow'
-import GuitarHeroModal from '@/components/GuitarHeroModal'
+import TopRightModal from '@/components/TopRightModal'
 import RetroProductPage from '@/components/RetroProductPage'
+import CenterModal from '@/components/CenterModal'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -35,9 +36,10 @@ export default function Home() {
   } | null>(null)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
   const [showProductModal, setShowProductModal] = useState(false)
-  const [showGuitarHeroModal, setShowGuitarHeroModal] = useState(false)
+  const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showRetroProductPage, setShowRetroProductPage] = useState(false)
   const [dropIsLive, setDropIsLive] = useState(false)
+  const [showCenterModal, setShowCenterModal] = useState(false)
   const audioPlayerRef = useRef<AudioPlayerHandle>(null)
 
   useEffect(() => {
@@ -100,12 +102,23 @@ export default function Home() {
   useEffect(() => {
     if (!showSpotlight && showContent) {
       const guitarHeroTimer = setTimeout(() => {
-        setShowGuitarHeroModal(true)
+        setShowTopRightModal(true)
       }, 2000)
 
-      return () => clearTimeout(guitarHeroTimer)
+      return () => clearTimeout(topRightTimer)
     }
   }, [showSpotlight, showContent])
+
+  // Show Center modal after Top Right modal appears
+  useEffect(() => {
+    if (showTopRightModal) {
+      const centerModalTimer = setTimeout(() => {
+        setShowCenterModal(true)
+      }, 2000)
+
+      return () => clearTimeout(centerModalTimer)
+    }
+  }, [showTopRightModal])
 
   // Check if a limited drop is live (only once on page load)
   useEffect(() => {
@@ -241,9 +254,9 @@ export default function Home() {
       {/* Audio Player */}
       <AudioPlayer ref={audioPlayerRef} />
 
-      {/* Bouncing Download Modal */}
+      {/* Bottom Left Modal */}
       {showDownloadModal && downloadModalData && (
-        <BouncingDownloadModal
+        <BottomLeftModal
           title={downloadModalData.title}
           questionText={downloadModalData.questionText}
           imageUrl={downloadModalData.fileUrl}
@@ -260,13 +273,18 @@ export default function Home() {
         onClose={handleCloseProductModal}
       />
 
-      {/* Guitar Hero Competition Modal */}
-      {showGuitarHeroModal && (
-        <GuitarHeroModal
-          onClose={() => setShowGuitarHeroModal(false)}
+      {/* Top Right Modal */}
+      {showTopRightModal && (
+        <TopRightModal
+          onClose={() => setShowTopRightModal(false)}
           onSuccessAudioStart={handleGuitarHeroSuccessAudioStart}
           onSuccessAudioStop={handleGuitarHeroSuccessAudioStop}
         />
+      )}
+
+      {/* Center Modal */}
+      {showCenterModal && (
+        <CenterModal onClose={() => setShowCenterModal(false)} />
       )}
 
       {/* Retro Product Page - Conditionally Rendered */}

@@ -1,6 +1,8 @@
 'use client'
 
-interface BouncingDownloadModalProps {
+import { useState, useEffect } from 'react'
+
+interface BottomLeftModalProps {
   title: string
   questionText: string
   imageUrl: string
@@ -9,14 +11,31 @@ interface BouncingDownloadModalProps {
   onClose: () => void
 }
 
-export default function BouncingDownloadModal({
+export default function BottomLeftModal({
   title,
   questionText,
   imageUrl,
   downloadFileName,
   fileExtension,
   onClose,
-}: BouncingDownloadModalProps) {
+}: BottomLeftModalProps) {
+  const [isVisible, setIsVisible] = useState(false)
+
+  // Trigger fade-in animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleClose = () => {
+    setIsVisible(false)
+    setTimeout(() => {
+      onClose()
+    }, 300)
+  }
+
   const handleDownload = async () => {
     try {
       // Fetch the file and trigger download
@@ -54,13 +73,15 @@ export default function BouncingDownloadModal({
 
   return (
     <div
-      className='fixed z-50 w-[280px] sm:w-[320px] select-none left-4 bottom-16'
+      className={`fixed z-50 w-[280px] sm:w-[320px] select-none left-4 bottom-16 transform transition-all duration-500 ${
+        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+      }`}
     >
       {/* Blue Header */}
       <div className='bg-blue-600 px-2 py-1 flex items-center justify-between rounded-t-sm'>
-        <h2 className='text-white font-bold text-xs'>{title}</h2>
+        <h2 className='text-white font-bold text-xs lowercase'>{title}</h2>
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
           aria-label='Close'
         >
@@ -92,19 +113,19 @@ export default function BouncingDownloadModal({
           onClick={handleDownload}
           className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
         >
-          <span className='underline'>D</span>ownload
+download
         </button>
         <button
           onClick={handleWhoAmI}
           className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
         >
-          <span className='underline'>W</span>ho Am I
+who am i
         </button>
         <button
           onClick={handleOffline}
           className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
         >
-          <span className='underline'>O</span>ffline
+offline
         </button>
       </div>
     </div>
