@@ -174,7 +174,7 @@ export default function TopRightModal({
                   src={
                     isSuccess
                       ? '/gh-sucess.jpeg'
-                      : '/holiday-landing-updated.png'
+                      : '/holiday-landing-updated.jpeg'
                   }
                   alt={
                     isSuccess
