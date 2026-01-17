@@ -101,7 +101,7 @@ export default function Home() {
   // Show Guitar Hero modal after spotlight animation completes and content is fully visible
   useEffect(() => {
     if (!showSpotlight && showContent) {
-      const guitarHeroTimer = setTimeout(() => {
+      const topRightTimer = setTimeout(() => {
         setShowTopRightModal(true)
       }, 2000)
 
