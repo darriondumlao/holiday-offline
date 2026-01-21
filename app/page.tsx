@@ -338,7 +338,7 @@ export default function Home() {
                 className='flex flex-col items-center space-y-6'
               >
                 <h1 className='text-white text-xs sm:text-sm tracking-widest font-light'>
-                  Q: what would you miss tomorrow?
+                  Q: what problem do you wish you could solve?
                 </h1>
 
                 <form onSubmit={handleAnswerSubmit} className='w-full max-w-xs'>

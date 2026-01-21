@@ -9,10 +9,10 @@ export async function POST(request: Request) {
     }
 
     const klaviyoApiKey = process.env.KLAVIYO_PRIVATE_API_KEY;
-    const listId = 'X7MupR';
+    const listId = process.env.KLAVIYO_GUITAR_HERO_LIST_ID;
 
-    if (!klaviyoApiKey) {
-      return NextResponse.json({ error: 'Klaviyo configuration missing' }, { status: 500 });
+    if (!klaviyoApiKey || !listId) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     // Format phone number to E.164 format (add +1 if not present)

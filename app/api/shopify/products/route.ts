@@ -52,7 +52,7 @@ export async function GET() {
     const storefrontUrl = `https://${storeDomain}/api/${API_VERSION}/graphql.json`
 
     // Get Storefront Access Token
-    const accessToken = await getStorefrontAccessToken()
+    const accessToken = getStorefrontAccessToken()
 
     const query = `
       {
@@ -93,7 +93,7 @@ export async function GET() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': accessToken,
+        'Shopify-Storefront-Private-Token': accessToken,
       },
       body: JSON.stringify({ query }),
     })
@@ -112,7 +112,7 @@ export async function GET() {
     if (errors) {
       console.error('[API/products] GraphQL errors:', errors)
       return NextResponse.json(
-        { error: 'GraphQL errors occurred', details: errors },
+        { error: 'Failed to fetch products' },
         { status: 400 }
       )
     }
@@ -151,7 +151,7 @@ export async function GET() {
   } catch (error) {
     console.error('[API/products] Error:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

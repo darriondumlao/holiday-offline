@@ -4,10 +4,9 @@
  * This module provides functions to interact with Shopify's Storefront API.
  *
  * AUTHENTICATION:
- * Uses the new Dev Dashboard app approach (post January 1, 2026):
- * - Client Credentials Grant → Admin API token
- * - Admin API → Create Storefront Access Token
- * - Storefront Access Token → Storefront API calls
+ * Uses the Headless Channel approach:
+ * - Storefront API token is pre-generated in Shopify Admin
+ * - No dynamic token creation needed
  *
  * ARCHITECTURE:
  * - Server Components: Use the server-side functions directly
@@ -94,13 +93,13 @@ async function shopifyFetch(query: string, variables: Record<string, unknown> = 
   const storefrontUrl = `https://${storeDomain}/api/${API_VERSION}/graphql.json`
 
   // Get Storefront Access Token
-  const accessToken = await getStorefrontAccessToken()
+  const accessToken = getStorefrontAccessToken()
 
   const response = await fetch(storefrontUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': accessToken,
+      'Shopify-Storefront-Private-Token': accessToken,
     },
     body: JSON.stringify({ query, variables }),
   })

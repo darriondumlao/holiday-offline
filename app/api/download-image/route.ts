@@ -1,5 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Allowed domains for image downloads (prevent SSRF)
+const ALLOWED_DOMAINS = [
+  'cdn.sanity.io',
+  'images.unsplash.com',
+  'sanity.io',
+];
+
+function isAllowedUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+
+    // Block private/internal IPs
+    const hostname = parsedUrl.hostname;
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.16.') ||
+      hostname.startsWith('169.254.') ||
+      hostname === '0.0.0.0'
+    ) {
+      return false;
+    }
+
+    // Only allow HTTPS
+    if (parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+
+    // Check against whitelist
+    return ALLOWED_DOMAINS.some(domain =>
+      parsedUrl.hostname === domain || parsedUrl.hostname.endsWith('.' + domain)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -13,7 +52,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch the image from Sanity CDN (server-side, no CORS issues)
+    // Validate URL against whitelist
+    if (!isAllowedUrl(imageUrl)) {
+      return NextResponse.json(
+        { error: 'Invalid image source' },
+        { status: 400 }
+      )
+    }
+
+    // Fetch the image from allowed CDN (server-side, no CORS issues)
     const imageResponse = await fetch(imageUrl)
 
     if (!imageResponse.ok) {

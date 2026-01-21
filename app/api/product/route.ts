@@ -44,16 +44,7 @@ export async function GET(request: Request) {
     const storefrontUrl = `https://${storeDomain}/api/${API_VERSION}/graphql.json`
 
     // Get Storefront Access Token
-    let accessToken: string
-    try {
-      accessToken = await getStorefrontAccessToken()
-    } catch (authError) {
-      console.error('[API/product] Auth error:', authError)
-      return NextResponse.json(
-        { error: 'Failed to authenticate with Shopify' },
-        { status: 500 }
-      )
-    }
+    const accessToken = getStorefrontAccessToken()
 
     // Query for a specific product or the first available product
     const query = productId
@@ -126,7 +117,7 @@ export async function GET(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': accessToken,
+        'Shopify-Storefront-Private-Token': accessToken,
       },
       body: JSON.stringify({ query }),
     })
@@ -135,7 +126,7 @@ export async function GET(request: Request) {
       const errorText = await response.text()
       console.error('[API/product] Shopify API error:', response.status, errorText)
       return NextResponse.json(
-        { error: 'Failed to fetch product from Shopify', details: errorText },
+        { error: 'Failed to fetch product' },
         { status: response.status }
       )
     }
@@ -145,7 +136,7 @@ export async function GET(request: Request) {
     if (errors) {
       console.error('[API/product] GraphQL errors:', errors)
       return NextResponse.json(
-        { error: 'GraphQL errors occurred', details: errors },
+        { error: 'Failed to fetch product' },
         { status: 400 }
       )
     }
@@ -196,7 +187,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('[API/product] Error:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

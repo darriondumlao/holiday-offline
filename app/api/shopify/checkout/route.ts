@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const storefrontUrl = `https://${storeDomain}/api/${API_VERSION}/graphql.json`
 
     // Get Storefront Access Token
-    const accessToken = await getStorefrontAccessToken()
+    const accessToken = getStorefrontAccessToken()
 
     const mutation = `
       mutation cartCreate($input: CartInput!) {
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': accessToken,
+        'Shopify-Storefront-Private-Token': accessToken,
       },
       body: JSON.stringify({ query: mutation, variables }),
     })
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     if (errors) {
       console.error('[API/checkout] GraphQL errors:', errors)
       return NextResponse.json(
-        { error: 'GraphQL errors occurred', details: errors },
+        { error: 'Failed to create checkout' },
         { status: 400 }
       )
     }
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[API/checkout] Error:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
