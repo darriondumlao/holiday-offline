@@ -357,7 +357,7 @@ export default function Home() {
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
                         placeholder='type your answer here'
-                        className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                        className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 pl-4 pr-10 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
                         disabled={isSubmittingAnswer || !showSubscribe}
                       />
                       {answer.trim() && showSubscribe && (
