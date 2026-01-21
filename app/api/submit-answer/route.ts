@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     const sanitizedAnswer = sanitizeAnswer(answer);
 
     // Check for required environment variables
-    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEET_ID) {
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_SHEET_ID_ANSWERS) {
       console.error('Missing Google Sheets environment variables');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
