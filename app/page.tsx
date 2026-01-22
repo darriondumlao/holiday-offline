@@ -7,10 +7,13 @@ import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
 import BottomLeftModal from '@/components/BottomLeftModal'
 import OfflineModal from '@/components/OfflineModal'
 import ProductModal from '@/components/ProductModal'
-import ImageSlideshow from '@/components/ImageSlideshow'
 import TopRightModal from '@/components/TopRightModal'
 import RetroProductPage from '@/components/RetroProductPage'
 import CenterModal from '@/components/CenterModal'
+import ModalSidebar from '@/components/ModalSidebar'
+import ImageSlideshowModal from '@/components/ImageSlideshowModal'
+import AnswersModal from '@/components/AnswersModal'
+import RamboModal from '@/components/RamboModal'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -40,6 +43,11 @@ export default function Home() {
   const [showRetroProductPage, setShowRetroProductPage] = useState(false)
   const [dropIsLive, setDropIsLive] = useState(false)
   const [showCenterModal, setShowCenterModal] = useState(false)
+  const [showSlideshowModal, setShowSlideshowModal] = useState(false)
+  const [showAnswersModal, setShowAnswersModal] = useState(false)
+  const [showRamboModal, setShowRamboModal] = useState(false)
+  const [showLeftSidebar, setShowLeftSidebar] = useState(false)
+  const [showRightSidebar, setShowRightSidebar] = useState(false)
   const audioPlayerRef = useRef<AudioPlayerHandle>(null)
 
   useEffect(() => {
@@ -59,7 +67,7 @@ export default function Home() {
     }
   }, [])
 
-  // Fetch and show downloadable content modal
+  // Fetch downloadable content data
   useEffect(() => {
     const fetchDownloadableContent = async () => {
       try {
@@ -68,16 +76,7 @@ export default function Home() {
 
         if (data.content && data.content.fileUrl) {
           setDownloadModalData(data.content)
-
-          // Show modal after the specified delay
-          const modalTimer = setTimeout(
-            () => {
-              setShowDownloadModal(true)
-            },
-            (data.content.delaySeconds || 4) * 1000
-          )
-
-          return () => clearTimeout(modalTimer)
+          setShowDownloadModal(true)
         }
       } catch (error) {
         console.error('Error fetching downloadable content:', error)
@@ -87,38 +86,30 @@ export default function Home() {
     fetchDownloadableContent()
   }, [])
 
-  // Show offline modal 3 seconds after download modal appears
+  // Preload right side modals data
   useEffect(() => {
-    if (showDownloadModal) {
-      const offlineTimer = setTimeout(() => {
-        setShowOfflineModal(true)
-      }, 3000)
+    setShowTopRightModal(true)
+    setShowSlideshowModal(true)
+    setShowCenterModal(true)
+    setShowAnswersModal(true)
+    setShowRamboModal(true)
+  }, [])
 
-      return () => clearTimeout(offlineTimer)
-    }
-  }, [showDownloadModal])
-
-  // Show Guitar Hero modal after spotlight animation completes and content is fully visible
+  // Show LEFT sidebar first after spotlight completes
   useEffect(() => {
     if (!showSpotlight && showContent) {
-      const topRightTimer = setTimeout(() => {
-        setShowTopRightModal(true)
-      }, 2000)
+      const leftTimer = setTimeout(() => {
+        setShowLeftSidebar(true)
+      }, 1500)
 
-      return () => clearTimeout(topRightTimer)
+      return () => clearTimeout(leftTimer)
     }
   }, [showSpotlight, showContent])
 
-  // Show Center modal after Top Right modal appears
-  useEffect(() => {
-    if (showTopRightModal) {
-      const centerModalTimer = setTimeout(() => {
-        setShowCenterModal(true)
-      }, 2000)
-
-      return () => clearTimeout(centerModalTimer)
-    }
-  }, [showTopRightModal])
+  // Callback when left sidebar is ready - trigger right sidebar
+  const handleLeftSidebarReady = () => {
+    setShowRightSidebar(true)
+  }
 
   // Check if a limited drop is live (only once on page load)
   useEffect(() => {
@@ -250,21 +241,53 @@ export default function Home() {
   }
 
   return (
-    <div className='fixed inset-0 bg-black overflow-y-auto overflow-x-hidden scroll-smooth'>
+    <div className='fixed inset-0 bg-black overflow-hidden'>
       {/* Audio Player */}
       <AudioPlayer ref={audioPlayerRef} />
 
-      {/* Bottom Left Modal */}
-      {showDownloadModal && downloadModalData && (
-        <BottomLeftModal
-          title={downloadModalData.title}
-          questionText={downloadModalData.questionText}
-          imageUrl={downloadModalData.fileUrl}
-          downloadFileName={downloadModalData.downloadFileName}
-          fileExtension={downloadModalData.fileExtension}
-          onClose={() => setShowDownloadModal(false)}
-        />
-      )}
+      {/* Left Sidebar - Shows first */}
+      <ModalSidebar
+        side='left'
+        delayStart={!showLeftSidebar}
+        onReady={handleLeftSidebarReady}
+      >
+        {showDownloadModal && downloadModalData && (
+          <BottomLeftModal
+            title={downloadModalData.title}
+            questionText={downloadModalData.questionText}
+            imageUrl={downloadModalData.fileUrl}
+            downloadFileName={downloadModalData.downloadFileName}
+            fileExtension={downloadModalData.fileExtension}
+            onClose={() => setShowDownloadModal(false)}
+          />
+        )}
+        {showCenterModal && (
+          <CenterModal onClose={() => setShowCenterModal(false)} />
+        )}
+        {showAnswersModal && (
+          <AnswersModal onClose={() => setShowAnswersModal(false)} />
+        )}
+      </ModalSidebar>
+
+      {/* Right Sidebar - Shows after left is ready */}
+      <ModalSidebar
+        side='right'
+        delayStart={!showRightSidebar}
+      >
+        {showTopRightModal && (
+          <TopRightModal
+            onClose={() => setShowTopRightModal(false)}
+            onSuccessAudioStart={handleGuitarHeroSuccessAudioStart}
+            onSuccessAudioStop={handleGuitarHeroSuccessAudioStop}
+          />
+        )}
+        {showSlideshowModal && (
+          <ImageSlideshowModal onClose={() => setShowSlideshowModal(false)} />
+        )}
+        {showRamboModal && (
+          <RamboModal onClose={() => setShowRamboModal(false)} />
+        )}
+      </ModalSidebar>
 
       {/* {showOfflineModal && <OfflineModal onUnlock={handleUnlockProduct} />} */}
 
@@ -272,20 +295,6 @@ export default function Home() {
         isOpen={showProductModal}
         onClose={handleCloseProductModal}
       />
-
-      {/* Top Right Modal */}
-      {showTopRightModal && (
-        <TopRightModal
-          onClose={() => setShowTopRightModal(false)}
-          onSuccessAudioStart={handleGuitarHeroSuccessAudioStart}
-          onSuccessAudioStop={handleGuitarHeroSuccessAudioStop}
-        />
-      )}
-
-      {/* Center Modal */}
-      {showCenterModal && (
-        <CenterModal onClose={() => setShowCenterModal(false)} />
-      )}
 
       {/* Retro Product Page - Conditionally Rendered */}
       {showRetroProductPage && (
@@ -301,9 +310,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Content Wrapper */}
-      <div className='min-h-screen flex flex-col items-center justify-center px-4 py-8'>
-        <main className='w-full max-w-2xl flex flex-col items-center justify-center text-center py-8 pt-6'>
+      {/* Main Content Wrapper - Fixed center, not affected by sidebars */}
+      <div className='fixed inset-0 flex flex-col items-center justify-center px-4 py-8 pointer-events-none'>
+        <main className='w-full max-w-2xl flex flex-col items-center justify-center text-center py-8 pt-6 pointer-events-auto'>
           <div className='flex flex-col items-center justify-center space-y-6 md:space-y-8'>
             {/* Logo - Responsive sizing */}
             <div
@@ -521,10 +530,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Slideshow Section - Always visible, scrollable */}
-      <div className='w-full'>
-        <ImageSlideshow />
-      </div>
     </div>
   )
 }

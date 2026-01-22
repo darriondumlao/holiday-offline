@@ -112,7 +112,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
     <>
       <audio ref={audioRef} loop preload="metadata" src={audioUrl} />
 
-      <div className="fixed top-12 right-4 md:top-14 md:right-6 z-50" ref={containerRef}>
+      <div className="fixed top-12 right-4 md:top-14 md:right-6 z-[70]" ref={containerRef}>
         <div className="flex items-center gap-2">
           {/* Volume Slider - appears when open */}
           <div

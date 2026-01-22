@@ -238,3 +238,52 @@ button[disabled],
 .ticker:hover {
   animation-play-state: paused;
 }
+
+/* Hide scrollbar by default, show on hover */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Smooth scroll snap for modal sidebars */
+.snap-y {
+  scroll-snap-type: y mandatory;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}
+
+/* Scroll deceleration effect */
+.snap-mandatory {
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 6rem;
+  scroll-padding-bottom: 2rem;
+}

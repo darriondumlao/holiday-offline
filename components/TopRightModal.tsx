@@ -1,34 +1,28 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
+import ModalWrapper from './ModalWrapper'
 
 interface TopRightModalProps {
   onClose: () => void
   onSuccessAudioStart: () => void
   onSuccessAudioStop: () => void
+  title?: string
 }
 
 export default function TopRightModal({
   onClose,
   onSuccessAudioStart,
   onSuccessAudioStop,
+  title = 'january 29th',
 }: TopRightModalProps) {
   const [showForm, setShowForm] = useState(false)
   const [phone, setPhone] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
-  const [isVisible, setIsVisible] = useState(false)
   const successAudioRef = useRef<HTMLAudioElement>(null)
-
-  // Trigger fade-in animation on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true)
-    }, 50)
-    return () => clearTimeout(timer)
-  }, [])
 
   const handleOffline = () => {
     window.open(
@@ -42,7 +36,6 @@ export default function TopRightModal({
     e.preventDefault()
     if (!phone.trim()) return
 
-    // Phone validation (numbers only)
     const phoneRegex = /^\d+$/
     if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
       setError('Please enter a valid phone number')
@@ -68,7 +61,6 @@ export default function TopRightModal({
         } else {
           setIsSuccess(true)
           setShowForm(false)
-          // Notify parent to mute main audio and play success audio
           onSuccessAudioStart()
           if (successAudioRef.current) {
             successAudioRef.current.play().catch(console.error)
@@ -86,7 +78,6 @@ export default function TopRightModal({
   }
 
   const handleClose = () => {
-    // Stop success audio and restore main audio if it was playing
     if (successAudioRef.current) {
       successAudioRef.current.pause()
       successAudioRef.current.currentTime = 0
@@ -94,123 +85,71 @@ export default function TopRightModal({
     if (isSuccess) {
       onSuccessAudioStop()
     }
-    setIsVisible(false)
-    setTimeout(() => {
-      onClose()
-    }, 300)
+    onClose()
   }
 
   return (
     <>
-      {/* Success audio element */}
       <audio ref={successAudioRef} preload='metadata'>
         <source src="/Sugar, We're Goin Down.mp3" type='audio/mpeg' />
       </audio>
 
-      {/* Modal Overlay */}
-      <div className='fixed z-[100] top-24 right-4 sm:right-8'>
-        {/* Modal */}
-        <div
-          className={`relative w-[260px] sm:w-[380px] select-none transform transition-all duration-500 ${
-            isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-          }`}
-        >
-          {/* Blue Header */}
-          <div className='bg-blue-600 px-2 py-1 flex items-center justify-between rounded-t-sm'>
-            <h2 className='text-white font-bold text-xs'>january 29th</h2>
-            <button
-              onClick={handleClose}
-              className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
-              aria-label='Close'
-            >
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                viewBox='0 0 24 24'
-                fill='white'
-                className='w-3 h-3'
-              >
-                <path
-                  fillRule='evenodd'
-                  d='M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z'
-                  clipRule='evenodd'
-                />
-              </svg>
-            </button>
-          </div>
-
-          {/* Content Area */}
-          <div className='bg-gray-200 px-3 py-3 flex flex-col items-center justify-center min-h-[220px] sm:min-h-[280px]'>
-            {showForm && !isSuccess ? (
-              <form onSubmit={handleSubmit} className='w-full space-y-3 px-2'>
-                <input
-                  type='tel'
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder='phone number'
-                  className='w-full bg-white border-2 border-black text-black text-center py-2 px-4 text-sm focus:outline-none focus:border-blue-600 transition-colors placeholder:text-gray-500'
-                  disabled={isSubmitting}
-                />
-                {error && (
-                  <p className='text-red-600 text-xs text-center'>{error}</p>
-                )}
-                <button
-                  type='submit'
-                  disabled={isSubmitting}
-                  className='w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 text-sm transition-colors disabled:opacity-50'
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit'}
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setShowForm(false)}
-                  className='w-full text-gray-600 hover:text-gray-800 text-xs transition-colors'
-                >
-                  Back
-                </button>
-              </form>
-            ) : (
-              <div className='relative w-full h-[180px] sm:h-[250px]'>
-                <Image
-                  src={
-                    isSuccess
-                      ? '/gh-sucess.jpeg'
-                      : '/holiday-landing-updated.jpeg'
-                  }
-                  alt={
-                    isSuccess
-                      ? 'Registration Success'
-                      : 'Guitar Hero Competition'
-                  }
-                  fill
-                  className='object-contain'
-                />
-              </div>
+      <ModalWrapper
+        title={title}
+        onClose={handleClose}
+        buttons={[
+          { label: 'go', onClick: handleOffline },
+          { label: 'to', onClick: handleOffline },
+          { label: 'offline', onClick: handleOffline },
+        ]}
+      >
+        {showForm && !isSuccess ? (
+          <form onSubmit={handleSubmit} className='w-full space-y-3 px-2'>
+            <input
+              type='tel'
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder='phone number'
+              className='w-full bg-white border-2 border-black text-black text-center py-2 px-4 text-sm focus:outline-none focus:border-blue-600 transition-colors placeholder:text-gray-500'
+              disabled={isSubmitting}
+            />
+            {error && (
+              <p className='text-red-600 text-xs text-center'>{error}</p>
             )}
+            <button
+              type='submit'
+              disabled={isSubmitting}
+              className='w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 text-sm transition-colors disabled:opacity-50'
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'}
+            </button>
+            <button
+              type='button'
+              onClick={() => setShowForm(false)}
+              className='w-full text-gray-600 hover:text-gray-800 text-xs transition-colors'
+            >
+              Back
+            </button>
+          </form>
+        ) : (
+          <div className='relative w-full h-[180px]'>
+            <Image
+              src={
+                isSuccess
+                  ? '/gh-sucess.jpeg'
+                  : '/holiday-landing-updated.jpeg'
+              }
+              alt={
+                isSuccess
+                  ? 'Registration Success'
+                  : 'Guitar Hero Competition'
+              }
+              fill
+              className='object-contain'
+            />
           </div>
-
-          {/* Button Row */}
-          <div className='bg-blue-600 px-1.5 py-1.5 flex items-center justify-between gap-1.5 rounded-b-sm'>
-            <button
-              onClick={handleOffline}
-              className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
-            >
-go
-            </button>
-            <button
-              onClick={handleOffline}
-              className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
-            >
-to
-            </button>
-            <button
-              onClick={handleOffline}
-              className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all px-2 py-1.5 border-2 border-black text-black font-bold text-xs cursor-pointer'
-            >
-offline
-            </button>
-          </div>
-        </div>
-      </div>
+        )}
+      </ModalWrapper>
     </>
   )
 }
