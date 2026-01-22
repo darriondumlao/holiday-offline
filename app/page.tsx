@@ -262,10 +262,16 @@ export default function Home() {
           />
         )}
         {showCenterModal && (
-          <CenterModal onClose={() => setShowCenterModal(false)} />
+          <CenterModal
+            title='click the buttons'
+            onClose={() => setShowCenterModal(false)}
+          />
         )}
         {showAnswersModal && (
-          <AnswersModal onClose={() => setShowAnswersModal(false)} />
+          <AnswersModal
+            title='what would you miss tomorrow?'
+            onClose={() => setShowAnswersModal(false)}
+          />
         )}
       </ModalSidebar>
 
@@ -276,16 +282,23 @@ export default function Home() {
       >
         {showTopRightModal && (
           <TopRightModal
+            title='january 29th'
             onClose={() => setShowTopRightModal(false)}
             onSuccessAudioStart={handleGuitarHeroSuccessAudioStart}
             onSuccessAudioStop={handleGuitarHeroSuccessAudioStop}
           />
         )}
         {showSlideshowModal && (
-          <ImageSlideshowModal onClose={() => setShowSlideshowModal(false)} />
+          <ImageSlideshowModal
+            title='what kept me alive'
+            onClose={() => setShowSlideshowModal(false)}
+          />
         )}
         {showRamboModal && (
-          <RamboModal onClose={() => setShowRamboModal(false)} />
+          <RamboModal
+            title='january 29th limited to 99 pairs ($99)'
+            onClose={() => setShowRamboModal(false)}
+          />
         )}
       </ModalSidebar>
 
