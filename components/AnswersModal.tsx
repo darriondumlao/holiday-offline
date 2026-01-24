@@ -65,6 +65,14 @@ export default function AnswersModal({ onClose, title = 'what would you miss tom
     }
   }, [historyIndex])
 
+  const handleWatch = () => {
+    window.open(
+      'https://youtu.be/I6zromBJVPU?si=ISmJvaQL9sTCcz2P',
+      '_blank',
+      'noopener,noreferrer'
+    )
+  }
+
   const currentAnswer = history[historyIndex] || ''
 
   return (
@@ -73,6 +81,7 @@ export default function AnswersModal({ onClose, title = 'what would you miss tom
       onClose={onClose}
       buttons={[
         { label: 'prev', onClick: getPrevAnswer },
+        { label: 'watch', onClick: handleWatch, small: true },
         { label: 'next', onClick: getNextAnswer },
       ]}
     >

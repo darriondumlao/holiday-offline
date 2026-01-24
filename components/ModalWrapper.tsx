@@ -74,10 +74,15 @@ export default function ModalWrapper({
       {buttons.length > 0 && (
         <div className='bg-blue-600 px-2 py-2 flex items-center justify-center gap-2 rounded-b-sm'>
           {buttons.map((button, index) => {
-            // Single button gets max-width, multiple buttons use flex-1
-            const sizeClass = buttons.length === 1
-              ? 'w-[45%]'
-              : 'flex-1'
+            // Determine size class based on button count and small prop
+            let sizeClass: string
+            if (buttons.length === 1) {
+              sizeClass = 'w-[45%]'
+            } else if (button.small) {
+              sizeClass = 'w-[20%]'
+            } else {
+              sizeClass = 'flex-1'
+            }
 
             return button.isDisplay ? (
               <div
