@@ -3,17 +3,16 @@
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import AudioPlayer, { AudioPlayerHandle } from '@/components/AudioPlayer'
 import BottomLeftModal from '@/components/BottomLeftModal'
 import OfflineModal from '@/components/OfflineModal'
 import ProductModal from '@/components/ProductModal'
-import TopRightModal from '@/components/TopRightModal'
 import RetroProductPage from '@/components/RetroProductPage'
 import CenterModal from '@/components/CenterModal'
 import ModalSidebar from '@/components/ModalSidebar'
 import ImageSlideshowModal from '@/components/ImageSlideshowModal'
 import AnswersModal from '@/components/AnswersModal'
 import RamboModal from '@/components/RamboModal'
+import TopRightModal from '@/components/TopRightModal'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -39,16 +38,15 @@ export default function Home() {
   } | null>(null)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
   const [showProductModal, setShowProductModal] = useState(false)
-  const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showRetroProductPage, setShowRetroProductPage] = useState(false)
   const [dropIsLive, setDropIsLive] = useState(false)
   const [showCenterModal, setShowCenterModal] = useState(false)
   const [showSlideshowModal, setShowSlideshowModal] = useState(false)
   const [showAnswersModal, setShowAnswersModal] = useState(false)
   const [showRamboModal, setShowRamboModal] = useState(false)
+  const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showLeftSidebar, setShowLeftSidebar] = useState(false)
   const [showRightSidebar, setShowRightSidebar] = useState(false)
-  const audioPlayerRef = useRef<AudioPlayerHandle>(null)
 
   useEffect(() => {
     // Show logo as spotlight starts to shine
@@ -88,11 +86,11 @@ export default function Home() {
 
   // Preload right side modals data
   useEffect(() => {
-    setShowTopRightModal(true)
     setShowSlideshowModal(true)
     setShowCenterModal(true)
     setShowAnswersModal(true)
     setShowRamboModal(true)
+    setShowTopRightModal(true)
   }, [])
 
   // Show LEFT sidebar first after spotlight completes
@@ -132,14 +130,6 @@ export default function Home() {
 
     checkDropStatus()
   }, [])
-
-  const handleGuitarHeroSuccessAudioStart = () => {
-    audioPlayerRef.current?.mute()
-  }
-
-  const handleGuitarHeroSuccessAudioStop = () => {
-    audioPlayerRef.current?.unmute()
-  }
 
   const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -242,9 +232,6 @@ export default function Home() {
 
   return (
     <div className='fixed inset-0 bg-black overflow-hidden'>
-      {/* Audio Player */}
-      <AudioPlayer ref={audioPlayerRef} />
-
       {/* Left Sidebar - Shows first */}
       <ModalSidebar
         side='left'
@@ -284,8 +271,6 @@ export default function Home() {
           <TopRightModal
             title='january 29th'
             onClose={() => setShowTopRightModal(false)}
-            onSuccessAudioStart={handleGuitarHeroSuccessAudioStart}
-            onSuccessAudioStop={handleGuitarHeroSuccessAudioStop}
           />
         )}
         {showSlideshowModal && (

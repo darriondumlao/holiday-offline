@@ -3,6 +3,7 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
+  --ticker-height: 40px;
 }
 
 @theme inline {

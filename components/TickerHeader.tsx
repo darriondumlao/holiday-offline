@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface TickerMessage {
   _id: string
@@ -11,6 +11,7 @@ interface TickerMessage {
 export default function TickerHeader() {
   const [messages, setMessages] = useState<TickerMessage[]>([])
   const [showContent, setShowContent] = useState(false)
+  const tickerRef = useRef<HTMLDivElement>(null)
 
   // Fade in after subscribe section (500ms + 2500ms delay + 1200ms fade = 4200ms total)
   useEffect(() => {
@@ -19,6 +20,20 @@ export default function TickerHeader() {
     }, 4200)
     return () => clearTimeout(timer)
   }, [])
+
+  // Set ticker height as CSS variable for countdown positioning
+  useEffect(() => {
+    const updateTickerHeight = () => {
+      if (tickerRef.current) {
+        const height = tickerRef.current.offsetHeight
+        document.documentElement.style.setProperty('--ticker-height', `${height}px`)
+      }
+    }
+
+    updateTickerHeight()
+    window.addEventListener('resize', updateTickerHeight)
+    return () => window.removeEventListener('resize', updateTickerHeight)
+  }, [messages])
 
   // Fetch ticker messages once on mount (cache is revalidated via webhook)
   useEffect(() => {
@@ -45,6 +60,7 @@ export default function TickerHeader() {
 
   return (
     <div
+      ref={tickerRef}
       id="ticker-header"
       className={`fixed top-0 left-0 right-0 z-50 bg-black overflow-hidden transition-opacity duration-1000 ${
         showContent ? 'opacity-100' : 'opacity-0'
