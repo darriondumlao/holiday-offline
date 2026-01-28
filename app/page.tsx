@@ -1,18 +1,22 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import BottomLeftModal from '@/components/BottomLeftModal'
 import OfflineModal from '@/components/OfflineModal'
-import ProductModal from '@/components/ProductModal'
-import RetroProductPage from '@/components/RetroProductPage'
 import CenterModal from '@/components/CenterModal'
 import ModalSidebar from '@/components/ModalSidebar'
 import ImageSlideshowModal from '@/components/ImageSlideshowModal'
 import AnswersModal from '@/components/AnswersModal'
 import RamboModal from '@/components/RamboModal'
 import TopRightModal from '@/components/TopRightModal'
+import BouncingWrapper from '@/components/BouncingWrapper'
+import CountdownTimer from '@/components/CountdownTimer'
+import ProductsView from '@/components/ProductsView'
+import TickerHeader from '@/components/TickerHeader'
+import ShopPasswordGate from '@/components/ShopPasswordGate'
+import CoyoteBagModal from '@/components/CoyoteBagModal'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -37,9 +41,6 @@ export default function Home() {
     delaySeconds: number
   } | null>(null)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
-  const [showProductModal, setShowProductModal] = useState(false)
-  const [showRetroProductPage, setShowRetroProductPage] = useState(false)
-  const [dropIsLive, setDropIsLive] = useState(false)
   const [showCenterModal, setShowCenterModal] = useState(false)
   const [showSlideshowModal, setShowSlideshowModal] = useState(false)
   const [showAnswersModal, setShowAnswersModal] = useState(false)
@@ -47,6 +48,21 @@ export default function Home() {
   const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showLeftSidebar, setShowLeftSidebar] = useState(false)
   const [showRightSidebar, setShowRightSidebar] = useState(false)
+  const [showProductsView, setShowProductsView] = useState(true) // Products view shows first
+  const [showCoyoteBagModal, setShowCoyoteBagModal] = useState(false)
+  const addToCartRef = useRef<((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) | null>(null)
+
+  // Callback to receive addToCart function from ProductsView
+  const handleCartAddCallback = useCallback((addToCartFn: (product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) => {
+    addToCartRef.current = addToCartFn
+  }, [])
+
+  // Handler for adding coyote bag to cart
+  const handleAddCoyoteBagToCart = useCallback((product: { name: string; price: number; size: string; variantId: string }) => {
+    if (addToCartRef.current) {
+      addToCartRef.current(product)
+    }
+  }, [])
 
   useEffect(() => {
     // Show logo as spotlight starts to shine
@@ -54,10 +70,11 @@ export default function Home() {
       setShowContent(true)
     }, 500)
 
-    // Hide spotlight after animation
+    // Hide spotlight slightly before animation fully ends
+    // This allows content to start fading in as spotlight fades out
     const spotlightTimer = setTimeout(() => {
       setShowSpotlight(false)
-    }, 3500)
+    }, 3200)
 
     return () => {
       clearTimeout(logoTimer)
@@ -93,43 +110,26 @@ export default function Home() {
     setShowTopRightModal(true)
   }, [])
 
-  // Show LEFT sidebar first after spotlight completes
+  // Show bouncing modals after spotlight completes
   useEffect(() => {
     if (!showSpotlight && showContent) {
+      // First set of modals
       const leftTimer = setTimeout(() => {
         setShowLeftSidebar(true)
       }, 1500)
 
-      return () => clearTimeout(leftTimer)
+      // Second set of modals with slight delay
+      const rightTimer = setTimeout(() => {
+        setShowRightSidebar(true)
+      }, 2000)
+
+      return () => {
+        clearTimeout(leftTimer)
+        clearTimeout(rightTimer)
+      }
     }
   }, [showSpotlight, showContent])
 
-  // Callback when left sidebar is ready - trigger right sidebar
-  const handleLeftSidebarReady = () => {
-    setShowRightSidebar(true)
-  }
-
-  // Check if a limited drop is live (only once on page load)
-  useEffect(() => {
-    const checkDropStatus = async () => {
-      try {
-        const response = await fetch('/api/limited-drop')
-        const data = await response.json()
-
-        // Drop is live if it exists, is active, and has a startedAt timestamp
-        if (data.drop && data.drop.isActive && data.drop.startedAt) {
-          setDropIsLive(true)
-        } else {
-          setDropIsLive(false)
-        }
-      } catch (error) {
-        console.error('Error checking drop status:', error)
-        setDropIsLive(false)
-      }
-    }
-
-    checkDropStatus()
-  }, [])
 
   const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -221,92 +221,115 @@ export default function Home() {
     }
   }
 
-  const handleUnlockProduct = () => {
-    setShowProductModal(true)
-    setShowOfflineModal(false)
-  }
-
-  const handleCloseProductModal = () => {
-    setShowProductModal(false)
-  }
 
   return (
-    <div className='fixed inset-0 bg-black overflow-hidden'>
-      {/* Left Sidebar - Shows first */}
-      <ModalSidebar
-        side='left'
-        delayStart={!showLeftSidebar}
-        onReady={handleLeftSidebarReady}
-      >
-        {showDownloadModal && downloadModalData && (
-          <BottomLeftModal
-            title={downloadModalData.title}
-            questionText={downloadModalData.questionText}
-            imageUrl={downloadModalData.fileUrl}
-            downloadFileName={downloadModalData.downloadFileName}
-            fileExtension={downloadModalData.fileExtension}
-            onClose={() => setShowDownloadModal(false)}
-          />
-        )}
-        {showCenterModal && (
-          <CenterModal
-            title='click the buttons'
-            onClose={() => setShowCenterModal(false)}
-          />
-        )}
-        {showAnswersModal && (
-          <AnswersModal
-            title='what would you miss tomorrow?'
-            onClose={() => setShowAnswersModal(false)}
-          />
-        )}
-      </ModalSidebar>
+    <div className="fixed inset-0 overflow-hidden bg-black">
+      {/* Ticker Header - waits for spotlight */}
+      <TickerHeader showAfterSpotlight={!showSpotlight} />
 
-      {/* Right Sidebar - Shows after left is ready */}
-      <ModalSidebar
-        side='right'
-        delayStart={!showRightSidebar}
-      >
-        {showTopRightModal && (
-          <TopRightModal
-            title='january 29th'
-            onClose={() => setShowTopRightModal(false)}
-          />
-        )}
-        {showSlideshowModal && (
-          <ImageSlideshowModal
-            title='what kept me alive'
-            onClose={() => setShowSlideshowModal(false)}
-          />
-        )}
-        {showRamboModal && (
-          <RamboModal
-            title='january 29th limited to 99 pairs ($99)'
-            onClose={() => setShowRamboModal(false)}
-          />
-        )}
-      </ModalSidebar>
-
-      {/* {showOfflineModal && <OfflineModal onUnlock={handleUnlockProduct} />} */}
-
-      <ProductModal
-        isOpen={showProductModal}
-        onClose={handleCloseProductModal}
+      {/* Countdown Timer with View Toggle - waits for spotlight */}
+      <CountdownTimer
+        showProductsView={showProductsView}
+        onToggleView={setShowProductsView}
+        showAfterSpotlight={!showSpotlight}
+        onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
       />
 
-      {/* Retro Product Page - Conditionally Rendered */}
-      {showRetroProductPage && (
-        <RetroProductPage onClose={() => setShowRetroProductPage(false)} />
-      )}
+      {/* Products View - Shows by default, waits for spotlight, protected by password */}
+      <ShopPasswordGate isVisible={showProductsView}>
+        <ProductsView
+          isVisible={showProductsView}
+          showAfterSpotlight={!showSpotlight}
+          onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
+          onCartAddCallback={handleCartAddCallback}
+        />
+      </ShopPasswordGate>
 
-      {/* Spotlight Effect */}
+      {/* Coyote Bag Modal */}
+      <CoyoteBagModal
+        isOpen={showCoyoteBagModal}
+        onAddToCart={handleAddCoyoteBagToCart}
+        onClose={() => setShowCoyoteBagModal(false)}
+      />
+
+      {/* Spotlight Effect - Always visible regardless of view */}
       {showSpotlight && (
-        <div className='absolute inset-0 z-50 pointer-events-none'>
+        <div className='fixed inset-0 z-[100] pointer-events-none'>
           <div className='spotlight-container'>
             <div className='spotlight' />
           </div>
         </div>
       )}
+
+      {/* Main Home View - Shows when toggled */}
+      <div
+        className={`transition-opacity duration-500 ${
+          showProductsView ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+        }`}
+      >
+        {/* Bouncing Modals - DVD-style animation */}
+        {showLeftSidebar && (
+          <>
+            {showDownloadModal && downloadModalData && (
+              <BouncingWrapper speed={1.5} className="z-40" title={downloadModalData.title}>
+                <BottomLeftModal
+                  title={downloadModalData.title}
+                  questionText={downloadModalData.questionText}
+                  imageUrl={downloadModalData.fileUrl}
+                  downloadFileName={downloadModalData.downloadFileName}
+                  fileExtension={downloadModalData.fileExtension}
+                  onClose={() => setShowDownloadModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+            {showCenterModal && (
+              <BouncingWrapper speed={1.8} className="z-40" title="click the buttons">
+                <CenterModal
+                  title='click the buttons'
+                  onClose={() => setShowCenterModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+            {showAnswersModal && (
+              <BouncingWrapper speed={1.3} className="z-40" title="what would you miss tomorrow?">
+                <AnswersModal
+                  title='what would you miss tomorrow?'
+                  onClose={() => setShowAnswersModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+          </>
+        )}
+
+        {showRightSidebar && (
+          <>
+            {showTopRightModal && (
+              <BouncingWrapper speed={1.6} className="z-40" title="january 29th">
+                <TopRightModal
+                  title='january 29th'
+                  onClose={() => setShowTopRightModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+            {showSlideshowModal && (
+              <BouncingWrapper speed={1.4} className="z-40" title="what kept me alive">
+                <ImageSlideshowModal
+                  title='what kept me alive'
+                  onClose={() => setShowSlideshowModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+            {showRamboModal && (
+              <BouncingWrapper speed={2} className="z-40" title="rambo ($99)">
+                <RamboModal
+                  title='january 29th limited to 99 pairs ($99)'
+                  onClose={() => setShowRamboModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+          </>
+        )}
+
 
       {/* Main Content Wrapper - Fixed center, not affected by sidebars */}
       <div className='fixed inset-0 flex flex-col items-center justify-center px-4 py-8 pointer-events-none'>
@@ -344,7 +367,7 @@ export default function Home() {
                 transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                 className='flex flex-col items-center space-y-6'
               >
-                <h1 className='text-white text-xs sm:text-sm tracking-widest font-light'>
+                <h1 className="text-xs sm:text-sm tracking-widest font-light text-white">
                   Q: what problem do you wish you could solve?
                 </h1>
 
@@ -364,7 +387,7 @@ export default function Home() {
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
                         placeholder='type your answer here'
-                        className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 pl-4 pr-10 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                        className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 pl-4 pr-10 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
                         disabled={isSubmittingAnswer || !showSubscribe}
                       />
                       {answer.trim() && showSubscribe && (
@@ -393,20 +416,10 @@ export default function Home() {
 
                 <button
                   onClick={() => setShowSubscribe(false)}
-                  className='text-white border-b border-gray-600 hover:border-gray-400 transition-colors tracking-widest text-xs sm:text-sm pb-1'
+                  className="border-b border-gray-600 hover:border-gray-400 transition-colors tracking-widest text-xs sm:text-sm pb-1 text-white"
                 >
                   subscribe
                 </button>
-
-                {/* Shop Button - Only shows when a limited drop is live */}
-                {dropIsLive && (
-                  <button
-                    onClick={() => setShowRetroProductPage(true)}
-                    className='text-yellow-400 border-b border-yellow-600 hover:border-yellow-400 transition-colors tracking-widest text-xs sm:text-sm pb-1 animate-pulse'
-                  >
-                    shop
-                  </button>
-                )}
               </motion.div>
 
               {/* Subscribe Form - Appears in same position */}
@@ -422,7 +435,7 @@ export default function Home() {
                 <motion.div
                   initial={false}
                   animate={{
-                    backgroundColor: !showSubscribe ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                    backgroundColor: 'transparent',
                     borderRadius: 12,
                     padding: !showSubscribe ? 24 : 0,
                   }}
@@ -434,7 +447,7 @@ export default function Home() {
                     animate={{ opacity: !showSubscribe ? 1 : 0 }}
                     transition={{ duration: 0.3, delay: !showSubscribe ? 0.5 : 0 }}
                     onClick={() => setShowSubscribe(true)}
-                    className='absolute -top-2 -right-2 text-gray-500 hover:text-gray-300 transition-colors z-10'
+                    className="absolute -top-2 -right-2 transition-colors z-10 text-gray-500 hover:text-gray-300"
                     type='button'
                   >
                     <svg
@@ -470,7 +483,7 @@ export default function Home() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder='email address'
-                          className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                          className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
                           disabled={isSubmittingSubscribe || showSubscribe}
                         />
                       </motion.div>
@@ -484,7 +497,7 @@ export default function Home() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder='phone number'
-                          className='w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-600 placeholder:tracking-widest placeholder:text-xs'
+                          className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
                           disabled={isSubmittingSubscribe || showSubscribe}
                         />
                       </motion.div>
@@ -527,6 +540,8 @@ export default function Home() {
         </div> */}
         </main>
       </div>
+      </div>
+      {/* End of Main Home View wrapper */}
 
     </div>
   )

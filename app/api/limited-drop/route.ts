@@ -1,62 +1,51 @@
 import { NextResponse } from 'next/server'
-import { getActiveLimitedDrop, updateLimitedDropTimers, sanityClient } from '@/lib/sanity'
+import { getActiveLimitedDrop } from '@/lib/sanity'
+import { unstable_cache } from 'next/cache'
 
-// Calculate the current countdown value based on elapsed time
-function calculateCurrentValue(
-  startValue: number,
-  intervalSeconds: number,
-  startedAt: string
-): number {
-  const now = Date.now()
-  const started = new Date(startedAt).getTime()
-  const elapsedMs = now - started
-
-  if (elapsedMs < 0) {
-    return startValue
+// Cache limited drop data for 30 seconds
+// This reduces Sanity API calls while still being responsive to drop activations
+const getCachedLimitedDrop = unstable_cache(
+  async () => {
+    return getActiveLimitedDrop()
+  },
+  ['limited-drop'],
+  {
+    revalidate: 30, // 30 seconds cache
+    tags: ['sanity', 'limited-drop'],
   }
+)
 
-  const elapsedSeconds = Math.floor(elapsedMs / 1000)
-  const ticksElapsed = Math.floor(elapsedSeconds / intervalSeconds)
-  const currentValue = Math.max(0, startValue - ticksElapsed)
-  return currentValue
-}
-
-// GET - Fetch active limited drop with calculated current values
+// GET - Fetch active limited drop
 export async function GET() {
   try {
-    const drop = await getActiveLimitedDrop()
+    const drop = await getCachedLimitedDrop()
 
     if (!drop) {
-      return NextResponse.json({ drop: null })
-    }
-
-    // If drop has started, calculate current values based on elapsed time
-    if (drop.startedAt && drop.sizeTimers) {
-      const updatedTimers = drop.sizeTimers.map((timer) => {
-        const currentValue = calculateCurrentValue(
-          timer.startValue,
-          timer.intervalSeconds,
-          drop.startedAt!
-        )
-        return {
-          ...timer,
-          currentValue,
-          soldOut: currentValue <= 0,
+      return NextResponse.json(
+        { drop: null },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          },
         }
-      })
-
-      const allSoldOut = updatedTimers.every((t) => t.soldOut)
-
-      return NextResponse.json({
-        drop: {
-          ...drop,
-          sizeTimers: updatedTimers,
-          allSoldOut,
-        },
-      })
+      )
     }
 
-    return NextResponse.json({ drop })
+    // Return only the fields needed for the timer
+    return NextResponse.json(
+      {
+        drop: {
+          dropName: drop.dropName,
+          isActive: drop.isActive,
+          startedAt: drop.startedAt,
+        },
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    )
   } catch (error) {
     console.error('Error fetching limited drop:', error)
     return NextResponse.json(

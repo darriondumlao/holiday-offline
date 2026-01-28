@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue } from "next/font/google";
 import "./globals.css";
-import TickerHeader from "@/components/TickerHeader";
-import CountdownTimer from "@/components/CountdownTimer";
 
 // Retro ad font for product pages
 const bebasNeue = Bebas_Neue({
@@ -53,8 +51,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://sheets.googleapis.com" />
       </head>
       <body className={`antialiased ${bebasNeue.variable}`}>
-        <TickerHeader />
-        <CountdownTimer />
         {children}
       </body>
     </html>

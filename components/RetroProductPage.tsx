@@ -39,6 +39,7 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
   const [limitedDrop, setLimitedDrop] = useState<LimitedDrop | null>(null)
   const [countdowns, setCountdowns] = useState<Record<string, number> | null>(null)
   const timerIntervalsRef = useRef<NodeJS.Timeout[]>([])
+  const isMountedRef = useRef(true)
 
   // Fetch product with minimum 1.5s loading time
   useEffect(() => {
@@ -48,12 +49,9 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
       try {
         // Fetch products from the 'offline' collection
         const products = await fetchCollectionClient('offline')
-        console.log('[RetroProductPage] Products fetched:', products?.length || 0)
 
         if (products && products.length > 0) {
           setProduct(products[0])
-          console.log('[RetroProductPage] Product set:', products[0].name)
-          console.log('[RetroProductPage] Variants:', products[0].variants.map(v => v.size))
         } else {
           setError('No products available')
         }
@@ -75,10 +73,15 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
 
   // Fetch limited drop data
   useEffect(() => {
+    isMountedRef.current = true
+
     const fetchLimitedDrop = async () => {
       try {
         const response = await fetch('/api/limited-drop')
         const data = await response.json()
+
+        // Check if component is still mounted before setting state
+        if (!isMountedRef.current) return
 
         if (data.drop && data.drop.sizeTimers) {
           setLimitedDrop(data.drop)
@@ -91,7 +94,7 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
           })
           setCountdowns(initialCountdowns)
 
-          // Clear existing intervals
+          // Clear existing intervals before creating new ones
           timerIntervalsRef.current.forEach(clearInterval)
           timerIntervalsRef.current = []
 
@@ -102,6 +105,9 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
             }
 
             const interval = setInterval(() => {
+              // Check if still mounted before updating state
+              if (!isMountedRef.current) return
+
               setCountdowns(prev => {
                 if (!prev) return prev
                 const key = timer.size.toLowerCase()
@@ -114,8 +120,8 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
             timerIntervalsRef.current.push(interval)
           })
         }
-      } catch (err) {
-        console.error('Error fetching limited drop:', err)
+      } catch {
+        // Silently handle fetch errors - user will see fallback state
       }
     }
 
@@ -123,6 +129,7 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
 
     // Cleanup intervals on unmount
     return () => {
+      isMountedRef.current = false
       timerIntervalsRef.current.forEach(clearInterval)
       timerIntervalsRef.current = []
     }
@@ -210,7 +217,6 @@ export default function RetroProductPage({ onClose }: RetroProductPageProps) {
   const handleSizeClick = async (variant: ProductVariant) => {
     // Check if countdown has reached zero
     if (isCountdownZero(variant.size)) {
-      console.log('[RetroProductPage] Cannot checkout - countdown zero for', variant.size)
       return
     }
 

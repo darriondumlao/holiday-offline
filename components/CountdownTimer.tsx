@@ -3,6 +3,13 @@
 import { useEffect, useState, useRef } from 'react'
 import AudioPlayer, { AudioPlayerHandle } from './AudioPlayer'
 
+interface CountdownTimerProps {
+  showProductsView?: boolean
+  onToggleView?: (showProducts: boolean) => void
+  showAfterSpotlight?: boolean
+  onOpenCoyoteBag?: () => void
+}
+
 // 9 Year Anniversary: Thursday, January 29th, 2026 at 10:00 AM PST
 // PST is UTC-8, so 10:00 AM PST = 18:00 UTC
 const ANNIVERSARY_DATE = new Date('2026-01-29T18:00:00.000Z')
@@ -78,7 +85,7 @@ function formatNumber(num: number, padding: number = 4): string {
   return num.toString().padStart(padding, '0')
 }
 
-export default function CountdownTimer() {
+export default function CountdownTimer({ showProductsView = true, onToggleView, showAfterSpotlight = false, onOpenCoyoteBag }: CountdownTimerProps) {
   const [timeValues, setTimeValues] = useState<TimeValues>({
     months: 0,
     days: 0,
@@ -91,13 +98,15 @@ export default function CountdownTimer() {
   const [mounted, setMounted] = useState(false)
   const audioPlayerRef = useRef<AudioPlayerHandle>(null)
 
-  // Fade in after ticker (4200ms + small delay)
+  // Fade in after spotlight completes (slight stagger after ticker)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowContent(true)
-    }, 4400)
-    return () => clearTimeout(timer)
-  }, [])
+    if (showAfterSpotlight) {
+      const timer = setTimeout(() => {
+        setShowContent(true)
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [showAfterSpotlight])
 
   // Set mounted state to avoid hydration mismatch
   useEffect(() => {
@@ -134,13 +143,57 @@ export default function CountdownTimer() {
   return (
     <div
       id="countdown-timer"
-      className={`fixed left-0 right-0 z-40 bg-black py-3 border-t border-gray-900 transition-opacity duration-1000 ${
+      className={`fixed left-0 right-0 z-[65] py-3 transition-all duration-500 bg-black ${
         showContent ? 'opacity-100' : 'opacity-0'
       }`}
       style={{ top: 'var(--ticker-height, 40px)' }}
     >
-      {/* Audio Player - positioned absolute within countdown bar */}
-      <div className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 z-50">
+      {/* View Toggle Switch - positioned absolute on left */}
+      {onToggleView && (
+        <div className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-50">
+          <button
+            onClick={() => onToggleView(!showProductsView)}
+            className="flex items-center gap-1 md:gap-2 group"
+            aria-label={showProductsView ? 'Switch to main view' : 'Switch to products view'}
+          >
+            {/* Toggle Track */}
+            <div
+              className={`relative w-8 h-4 md:w-10 md:h-5 rounded-full transition-colors duration-300 ${
+                showProductsView ? 'bg-blue-600' : 'bg-gray-400'
+              }`}
+            >
+              {/* Toggle Knob */}
+              <div
+                className={`absolute top-0.5 w-3 h-3 md:w-4 md:h-4 rounded-full shadow transition-transform duration-300 ${
+                  showProductsView ? 'translate-x-4 md:translate-x-5 bg-white' : 'translate-x-0.5 bg-black'
+                }`}
+              />
+            </div>
+            {/* Label */}
+            <span className="hidden sm:block text-xs tracking-wider transition-colors text-gray-400 group-hover:text-white">
+              {showProductsView ? 'shop' : 'offline'}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Right side controls - Bag icon and Audio Player */}
+      <div className="absolute right-1 md:right-4 top-1/2 -translate-y-1/2 z-50 flex items-center gap-0 md:gap-3">
+        {/* Coyote Bag Icon - only shows on shop view (protected by password) */}
+        {onOpenCoyoteBag && showProductsView && (
+          <button
+            onClick={onOpenCoyoteBag}
+            className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition-colors touch-manipulation cursor-pointer group"
+            aria-label="View Coyote Bag"
+          >
+            <img
+              src="/bagfinal5.png"
+              alt="Coyote Bag"
+              className="w-7 h-7 md:w-9 md:h-9 object-contain opacity-80 group-hover:opacity-100 group-active:scale-95 transition-all"
+            />
+          </button>
+        )}
+        {/* Audio Player */}
         <AudioPlayer ref={audioPlayerRef} />
       </div>
 
@@ -183,8 +236,8 @@ export default function CountdownTimer() {
             <span className="text-white tracking-widest font-light">seconds</span>
           </div>
 
-          {/* Mobile Layout - Compact */}
-          <div className="flex sm:hidden items-center justify-center gap-1 text-[10px] pr-12">
+          {/* Mobile Layout - Compact, centered between toggle and audio */}
+          <div className="flex sm:hidden items-center justify-center gap-1 text-[10px] px-12">
             <span className="text-white tracking-wider font-light">9y =</span>
 
             <span className="text-[#00FF00] font-mono border-b border-[#00FF00] px-0.5 min-w-[24px] text-center">

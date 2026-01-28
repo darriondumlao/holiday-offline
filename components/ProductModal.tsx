@@ -51,6 +51,7 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
   const [limitedDrop, setLimitedDrop] = useState<LimitedDrop | null>(null)
   const [countdowns, setCountdowns] = useState<Record<string, number>>({})
   const timerIntervalsRef = useRef<NodeJS.Timeout[]>([])
+  const isMountedRef = useRef(true)
 
   const colorPalette = ['#ef4444', '#f59e0b', '#fbbf24', '#22c55e', '#10b981', '#0ea5e9']
 
@@ -66,9 +67,11 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
     ],
   }
 
-  // Clear all intervals on cleanup
+  // Clear all intervals and track mount state on cleanup
   useEffect(() => {
+    isMountedRef.current = true
     return () => {
+      isMountedRef.current = false
       timerIntervalsRef.current.forEach(clearInterval)
       timerIntervalsRef.current = []
     }
@@ -85,6 +88,9 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
       try {
         const response = await fetch('/api/product')
         const data = await response.json()
+
+        // Check if still mounted before setting state
+        if (!isMountedRef.current) return
 
         if (data.product) {
           const mappedProduct: ProductData = {
@@ -114,8 +120,9 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
           setProduct(fallbackProduct)
           setSelectedSize(fallbackProduct.variants[0].size)
         }
-      } catch (err) {
-        console.error('Error fetching product:', err)
+      } catch {
+        // Check if still mounted before setting state
+        if (!isMountedRef.current) return
         setProduct(fallbackProduct)
         setSelectedSize(fallbackProduct.variants[0].size)
       }
@@ -124,6 +131,9 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
       try {
         const response = await fetch('/api/limited-drop')
         const data = await response.json()
+
+        // Check if still mounted before setting state
+        if (!isMountedRef.current) return
 
         if (data.drop && data.drop.sizeTimers) {
           setLimitedDrop(data.drop)
@@ -144,6 +154,9 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
             if (timer.soldOut || (timer.currentValue !== undefined && timer.currentValue <= 0)) return
 
             const interval = setInterval(() => {
+              // Check if still mounted before updating state
+              if (!isMountedRef.current) return
+
               setCountdowns(prev => {
                 const key = timer.size.toLowerCase()
                 const currentVal = prev[key] ?? 0
@@ -155,11 +168,14 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
             timerIntervalsRef.current.push(interval)
           })
         }
-      } catch (err) {
-        console.error('Error fetching limited drop:', err)
+      } catch {
+        // Silently handle fetch errors - user will see fallback state
       }
 
-      setLoading(false)
+      // Check if still mounted before setting loading state
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
     }
 
     fetchData()

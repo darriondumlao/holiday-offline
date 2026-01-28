@@ -113,17 +113,11 @@ export async function POST(request: Request) {
     );
 
     if (!subscribeResponse.ok) {
-      const errorText = await subscribeResponse.text();
-      console.error('Klaviyo error:', subscribeResponse.status, errorText);
       return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
     }
 
-    // Klaviyo bulk job endpoints may return empty body with 202 status
-    console.log('Klaviyo response status:', subscribeResponse.status);
-
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error subscribing:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
   }
 }

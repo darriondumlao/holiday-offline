@@ -66,7 +66,7 @@ export default function ModalWrapper({
       </div>
 
       {/* Content Area */}
-      <div className='bg-gray-200 px-2 py-3 flex items-center justify-center min-h-[200px]'>
+      <div className='bg-gray-200 px-2 py-3 flex items-center justify-center h-[216px]'>
         {children}
       </div>
 

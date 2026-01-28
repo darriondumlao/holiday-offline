@@ -131,13 +131,6 @@ export default defineConfig({
         type: 'document',
         fields: [
           {
-            name: 'productId',
-            title: 'Product Reference',
-            type: 'reference',
-            to: [{ type: 'product' }],
-            description: 'The product this drop timer is for',
-          },
-          {
             name: 'dropName',
             title: 'Drop Name',
             type: 'string',
@@ -148,88 +141,35 @@ export default defineConfig({
             name: 'isActive',
             title: 'Drop Active',
             type: 'boolean',
-            description: 'Is this drop currently active?',
-            initialValue: true,
+            description: 'Is this drop currently active? Toggle on and click "Start Drop Now" to begin the 15-minute countdown.',
+            initialValue: false,
           },
           {
             name: 'startedAt',
             title: 'Drop Started At',
             type: 'datetime',
-            description: 'When the drop countdown started (set automatically when activated)',
-          },
-          {
-            name: 'sizeTimers',
-            title: 'Size Timer Configuration',
-            type: 'array',
-            of: [
-              {
-                type: 'object',
-                name: 'sizeTimer',
-                fields: [
-                  {
-                    name: 'size',
-                    title: 'Size',
-                    type: 'string',
-                    validation: (Rule) => Rule.required(),
-                  },
-                  {
-                    name: 'intervalSeconds',
-                    title: 'Countdown Interval (seconds)',
-                    type: 'number',
-                    description: 'How many seconds between each countdown tick (e.g., 2 = counts down 1 every 2 seconds)',
-                    validation: (Rule) => Rule.required().min(1),
-                  },
-                  {
-                    name: 'startValue',
-                    title: 'Starting Value',
-                    type: 'number',
-                    description: 'Initial countdown value (default 100)',
-                    initialValue: 100,
-                    validation: (Rule) => Rule.required().min(1),
-                  },
-                  {
-                    name: 'currentValue',
-                    title: 'Current Value',
-                    type: 'number',
-                    description: 'Current countdown value (updated by the system)',
-                  },
-                  {
-                    name: 'soldOut',
-                    title: 'Sold Out',
-                    type: 'boolean',
-                    description: 'Is this size sold out?',
-                    initialValue: false,
-                  },
-                ],
-                preview: {
-                  select: {
-                    size: 'size',
-                    interval: 'intervalSeconds',
-                    current: 'currentValue',
-                    soldOut: 'soldOut',
-                  },
-                  prepare(selection) {
-                    const { size, interval, current, soldOut } = selection
-                    return {
-                      title: `${size} - ${interval}s interval`,
-                      subtitle: soldOut ? '❌ SOLD OUT' : `Current: ${current ?? 100}`,
-                    }
-                  },
-                },
-              },
-            ],
+            description: 'When the drop countdown started. Click "Start Drop Now" button to set this automatically.',
+            readOnly: true,
           },
         ],
         preview: {
           select: {
             title: 'dropName',
             isActive: 'isActive',
+            startedAt: 'startedAt',
           },
           prepare(selection) {
-            const { title, isActive } = selection
+            const { title, isActive, startedAt } = selection
+            const hasStarted = !!startedAt
+            let subtitle = 'Inactive'
+            if (isActive && hasStarted) {
+              subtitle = '🔥 LIVE - Timer Running'
+            } else if (isActive && !hasStarted) {
+              subtitle = '⏸ Active - Click "Start Drop Now"'
+            }
             return {
               title: title,
-              subtitle: isActive ? '🔥 LIVE' : '⏸ Inactive',
+              subtitle: subtitle,
             }
           },
         },
