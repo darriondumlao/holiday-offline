@@ -227,8 +227,8 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
               className="h-12 w-1 bg-gray-600 rounded-lg appearance-none cursor-pointer volume-slider-vertical"
               style={{
                 writingMode: 'vertical-lr',
-                direction: 'rtl',
-                background: `linear-gradient(to top, #ffffff ${volume * 100}%, #4b5563 ${volume * 100}%)`,
+                transform: 'rotate(180deg)',
+                background: `linear-gradient(to bottom, #ffffff ${volume * 100}%, #4b5563 ${volume * 100}%)`,
               }}
             />
           </div>
