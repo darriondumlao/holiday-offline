@@ -6,12 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface ShopPasswordGateProps {
   children: React.ReactNode
   isVisible: boolean
+  onAuthChange?: (isAuthenticated: boolean) => void
 }
 
 // Timeout for auth check to prevent infinite loading state
 const AUTH_CHECK_TIMEOUT = 5000
 
-export default function ShopPasswordGate({ children, isVisible }: ShopPasswordGateProps) {
+export default function ShopPasswordGate({ children, isVisible, onAuthChange }: ShopPasswordGateProps) {
   const [password, setPassword] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null) // null = loading
   const [requiresPassword, setRequiresPassword] = useState(true)
@@ -42,6 +43,8 @@ export default function ShopPasswordGate({ children, isVisible }: ShopPasswordGa
         if (isMountedRef.current) {
           setIsAuthenticated(data.isAuthenticated)
           setRequiresPassword(data.requiresPassword)
+          // Notify parent of auth state
+          onAuthChange?.(data.isAuthenticated || !data.requiresPassword)
         }
       } catch {
         // On error, assume no password required (fail open for UX)
@@ -49,6 +52,7 @@ export default function ShopPasswordGate({ children, isVisible }: ShopPasswordGa
         if (isMountedRef.current) {
           setIsAuthenticated(true)
           setRequiresPassword(false)
+          onAuthChange?.(true)
         }
       }
     }
@@ -59,7 +63,7 @@ export default function ShopPasswordGate({ children, isVisible }: ShopPasswordGa
       isMountedRef.current = false
       clearTimeout(timeoutId)
     }
-  }, [])
+  }, [onAuthChange])
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -80,6 +84,7 @@ export default function ShopPasswordGate({ children, isVisible }: ShopPasswordGa
       if (data.success) {
         setIsAuthenticated(true)
         setPassword('')
+        onAuthChange?.(true)
       } else {
         setError('incorrect password')
         setIsShaking(true)
@@ -92,7 +97,7 @@ export default function ShopPasswordGate({ children, isVisible }: ShopPasswordGa
     } finally {
       setIsSubmitting(false)
     }
-  }, [password, isSubmitting])
+  }, [password, isSubmitting, onAuthChange])
 
   // Still loading auth status
   if (isAuthenticated === null) {

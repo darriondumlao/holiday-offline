@@ -8,6 +8,7 @@ interface CountdownTimerProps {
   onToggleView?: (showProducts: boolean) => void
   showAfterSpotlight?: boolean
   onOpenCoyoteBag?: () => void
+  isShopAuthenticated?: boolean
 }
 
 // 9 Year Anniversary: Thursday, January 29th, 2026 at 10:00 AM PST
@@ -85,7 +86,7 @@ function formatNumber(num: number, padding: number = 4): string {
   return num.toString().padStart(padding, '0')
 }
 
-export default function CountdownTimer({ showProductsView = true, onToggleView, showAfterSpotlight = false, onOpenCoyoteBag }: CountdownTimerProps) {
+export default function CountdownTimer({ showProductsView = true, onToggleView, showAfterSpotlight = false, onOpenCoyoteBag, isShopAuthenticated = false }: CountdownTimerProps) {
   const [timeValues, setTimeValues] = useState<TimeValues>({
     months: 0,
     days: 0,
@@ -179,8 +180,8 @@ export default function CountdownTimer({ showProductsView = true, onToggleView, 
 
       {/* Right side controls - Bag icon and Audio Player */}
       <div className="absolute right-1 md:right-4 top-1/2 -translate-y-1/2 z-50 flex items-center gap-0 md:gap-3">
-        {/* Coyote Bag Icon - only shows on shop view (protected by password) */}
-        {onOpenCoyoteBag && showProductsView && (
+        {/* Coyote Bag Icon - only shows on shop view AND when authenticated */}
+        {onOpenCoyoteBag && showProductsView && isShopAuthenticated && (
           <button
             onClick={onOpenCoyoteBag}
             className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition-colors touch-manipulation cursor-pointer group"

@@ -50,6 +50,7 @@ export default function Home() {
   const [showRightSidebar, setShowRightSidebar] = useState(false)
   const [showProductsView, setShowProductsView] = useState(false) // Offline view shows first
   const [showCoyoteBagModal, setShowCoyoteBagModal] = useState(false)
+  const [isShopAuthenticated, setIsShopAuthenticated] = useState(false)
   const addToCartRef = useRef<((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) | null>(null)
 
   // Callback to receive addToCart function from ProductsView
@@ -233,10 +234,11 @@ export default function Home() {
         onToggleView={setShowProductsView}
         showAfterSpotlight={!showSpotlight}
         onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
+        isShopAuthenticated={isShopAuthenticated}
       />
 
       {/* Products View - Shows by default, waits for spotlight, protected by password */}
-      <ShopPasswordGate isVisible={showProductsView}>
+      <ShopPasswordGate isVisible={showProductsView} onAuthChange={setIsShopAuthenticated}>
         <ProductsView
           isVisible={showProductsView}
           showAfterSpotlight={!showSpotlight}
@@ -245,12 +247,14 @@ export default function Home() {
         />
       </ShopPasswordGate>
 
-      {/* Coyote Bag Modal */}
-      <CoyoteBagModal
-        isOpen={showCoyoteBagModal}
-        onAddToCart={handleAddCoyoteBagToCart}
-        onClose={() => setShowCoyoteBagModal(false)}
-      />
+      {/* Coyote Bag Modal - only renders when shop is authenticated */}
+      {isShopAuthenticated && (
+        <CoyoteBagModal
+          isOpen={showCoyoteBagModal}
+          onAddToCart={handleAddCoyoteBagToCart}
+          onClose={() => setShowCoyoteBagModal(false)}
+        />
+      )}
 
       {/* Spotlight Effect - Always visible regardless of view */}
       {showSpotlight && (
