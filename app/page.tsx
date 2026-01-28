@@ -267,11 +267,11 @@ export default function Home() {
           showProductsView ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         }`}
       >
-        {/* Bouncing Modals - DVD-style animation */}
+        {/* Bouncing Modals - DVD-style animation with different directions to spread out */}
         {showLeftSidebar && (
           <>
             {showDownloadModal && downloadModalData && (
-              <BouncingWrapper speed={1.5} className="z-40" title={downloadModalData.title}>
+              <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title={downloadModalData.title}>
                 <BottomLeftModal
                   title={downloadModalData.title}
                   questionText={downloadModalData.questionText}
@@ -283,7 +283,7 @@ export default function Home() {
               </BouncingWrapper>
             )}
             {showCenterModal && (
-              <BouncingWrapper speed={1.8} className="z-40" title="click the buttons">
+              <BouncingWrapper speed={1.8} initialDirection="ne" className="z-40" title="click the buttons">
                 <CenterModal
                   title='click the buttons'
                   onClose={() => setShowCenterModal(false)}
@@ -291,7 +291,7 @@ export default function Home() {
               </BouncingWrapper>
             )}
             {showAnswersModal && (
-              <BouncingWrapper speed={1.3} className="z-40" title="what would you miss tomorrow?">
+              <BouncingWrapper speed={1.3} initialDirection="sw" className="z-40" title="what would you miss tomorrow?">
                 <AnswersModal
                   title='what would you miss tomorrow?'
                   onClose={() => setShowAnswersModal(false)}
@@ -304,7 +304,7 @@ export default function Home() {
         {showRightSidebar && (
           <>
             {showTopRightModal && (
-              <BouncingWrapper speed={1.6} className="z-40" title="january 29th">
+              <BouncingWrapper speed={1.6} initialDirection="nw" className="z-40" title="january 29th">
                 <TopRightModal
                   title='january 29th'
                   onClose={() => setShowTopRightModal(false)}
@@ -312,7 +312,7 @@ export default function Home() {
               </BouncingWrapper>
             )}
             {showSlideshowModal && (
-              <BouncingWrapper speed={1.4} className="z-40" title="what kept me alive">
+              <BouncingWrapper speed={1.4} initialDirection="sw" className="z-40" title="what kept me alive">
                 <ImageSlideshowModal
                   title='what kept me alive'
                   onClose={() => setShowSlideshowModal(false)}
@@ -320,7 +320,7 @@ export default function Home() {
               </BouncingWrapper>
             )}
             {showRamboModal && (
-              <BouncingWrapper speed={2} className="z-40" title="rambo ($99)">
+              <BouncingWrapper speed={2} initialDirection="ne" className="z-40" title="rambo ($99)">
                 <RamboModal
                   title='january 29th limited to 99 pairs ($99)'
                   onClose={() => setShowRamboModal(false)}

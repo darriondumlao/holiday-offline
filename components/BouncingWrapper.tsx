@@ -7,6 +7,7 @@ interface BouncingWrapperProps {
   speed?: number // pixels per frame
   initialX?: number
   initialY?: number
+  initialDirection?: 'ne' | 'nw' | 'se' | 'sw' // northeast, northwest, southeast, southwest
   className?: string
   title?: string // Title to show on mobile collapsed state
 }
@@ -21,6 +22,7 @@ export default function BouncingWrapper({
   speed = 2,
   initialX,
   initialY,
+  initialDirection,
   className = '',
   title = 'modal',
 }: BouncingWrapperProps) {
@@ -67,13 +69,40 @@ export default function BouncingWrapper({
 
     setPosition({ x: Math.max(0, startX), y: Math.max(minY, startY) })
 
-    // Random initial direction
-    const randomVx = Math.random() > 0.5 ? effectiveSpeed : -effectiveSpeed
-    const randomVy = Math.random() > 0.5 ? effectiveSpeed : -effectiveSpeed
-    setVelocity({ x: randomVx, y: randomVy })
+    // Set initial direction - use specified direction or random
+    let vx: number
+    let vy: number
+
+    if (initialDirection) {
+      // Specified direction
+      switch (initialDirection) {
+        case 'ne': // northeast (right and up)
+          vx = effectiveSpeed
+          vy = -effectiveSpeed
+          break
+        case 'nw': // northwest (left and up)
+          vx = -effectiveSpeed
+          vy = -effectiveSpeed
+          break
+        case 'se': // southeast (right and down)
+          vx = effectiveSpeed
+          vy = effectiveSpeed
+          break
+        case 'sw': // southwest (left and down)
+          vx = -effectiveSpeed
+          vy = effectiveSpeed
+          break
+      }
+    } else {
+      // Random direction
+      vx = Math.random() > 0.5 ? effectiveSpeed : -effectiveSpeed
+      vy = Math.random() > 0.5 ? effectiveSpeed : -effectiveSpeed
+    }
+
+    setVelocity({ x: vx, y: vy })
 
     setIsInitialized(true)
-  }, [effectiveSpeed, initialX, initialY, topBoundary])
+  }, [effectiveSpeed, initialX, initialY, initialDirection, topBoundary])
 
   // Update velocity when speed changes (mobile detection)
   useEffect(() => {
