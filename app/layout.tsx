@@ -45,6 +45,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Prevent Safari mobile zoom on input focus */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         {/* Preconnect to external APIs for faster requests */}
         <link rel="preconnect" href="https://a.klaviyo.com" />
         <link rel="preconnect" href="https://sheets.googleapis.com" />
