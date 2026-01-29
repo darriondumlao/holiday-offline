@@ -9,8 +9,8 @@ interface TopRightModalProps {
 }
 
 export default function TopRightModal({ onClose, title = 'january 29th' }: TopRightModalProps) {
-  const handleOffline = () => {
-    window.open('https://holidaybrand.co', '_blank', 'noopener,noreferrer')
+  const handleWatch = () => {
+    window.open('https://youtu.be/j58MqIrhuHw?si=4TlmR_4TSjlY9wjk', '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -18,14 +18,12 @@ export default function TopRightModal({ onClose, title = 'january 29th' }: TopRi
       title={title}
       onClose={onClose}
       buttons={[
-        { label: 'go', onClick: handleOffline },
-        { label: 'to', onClick: handleOffline },
-        { label: 'offline', onClick: handleOffline },
+        { label: 'watch', onClick: handleWatch },
       ]}
     >
       <div className='relative w-full h-[180px]'>
         <Image
-          src='/holiday-landing-updated.jpeg'
+          src='/IMG_0316.jpeg'
           alt='January 29th - Holiday 9 Year Anniversary'
           fill
           className='object-contain'
