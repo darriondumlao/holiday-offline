@@ -51,18 +51,23 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
+
   try {
     const { password } = await request.json()
     const correctPassword = process.env.SHOP_PASSWORD
 
     // If no password is configured, shop is open
     if (!correctPassword) {
+      console.log('[API/shop-auth] POST - Shop is open (no password configured)')
       const response = NextResponse.json({ success: true, message: 'Shop is open' })
       return response
     }
 
     // Validate password using timing-safe comparison
     if (!password || !secureCompare(password, correctPassword)) {
+      const duration = Date.now() - startTime
+      console.log(`[API/shop-auth] POST - Incorrect password attempt (${duration}ms)`)
       return NextResponse.json(
         { success: false, error: 'Incorrect password' },
         { status: 401 }
@@ -70,6 +75,8 @@ export async function POST(request: Request) {
     }
 
     // Password correct - set authentication cookie
+    const duration = Date.now() - startTime
+    console.log(`[API/shop-auth] POST - Access granted (${duration}ms)`)
     const response = NextResponse.json({ success: true, message: 'Access granted' })
 
     // Set cookie that expires when browser closes (session cookie)

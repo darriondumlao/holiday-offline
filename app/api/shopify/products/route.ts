@@ -47,6 +47,9 @@ interface ShopifyProductNode {
  * Fetches all products from Shopify using Storefront Access Token
  */
 export async function GET() {
+  const startTime = Date.now()
+  console.log('[API/products] Request started')
+
   try {
     const storeDomain = getStoreDomain()
     const storefrontUrl = `https://${storeDomain}/api/${API_VERSION}/graphql.json`
@@ -147,9 +150,13 @@ export async function GET() {
       }
     )
 
+    const duration = Date.now() - startTime
+    console.log(`[API/products] Success - ${products.length} products fetched in ${duration}ms`)
+
     return NextResponse.json({ products })
   } catch (error) {
-    console.error('[API/products] Error:', error instanceof Error ? error.message : error)
+    const duration = Date.now() - startTime
+    console.error(`[API/products] Error after ${duration}ms:`, error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

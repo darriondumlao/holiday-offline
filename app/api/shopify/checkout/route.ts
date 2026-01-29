@@ -27,9 +27,13 @@ interface LineItem {
  * }
  */
 export async function POST(request: Request) {
+  const startTime = Date.now()
+
   try {
     const body = await request.json()
     const { lineItems } = body as { lineItems: LineItem[] }
+
+    console.log(`[API/checkout] Request started - ${lineItems?.length || 0} items`)
 
     if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
       return NextResponse.json(
@@ -125,12 +129,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Cart error: ${errorMessages}` }, { status: 400 })
     }
 
+    const duration = Date.now() - startTime
+    console.log(`[API/checkout] Success - Cart created in ${duration}ms`)
+
     return NextResponse.json({
       id: data.cartCreate.cart.id,
       webUrl: data.cartCreate.cart.checkoutUrl,
     })
   } catch (error) {
-    console.error('[API/checkout] Error:', error instanceof Error ? error.message : error)
+    const duration = Date.now() - startTime
+    console.error(`[API/checkout] Error after ${duration}ms:`, error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

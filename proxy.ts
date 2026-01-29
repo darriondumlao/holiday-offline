@@ -151,7 +151,8 @@ export async function proxy(request: NextRequest) {
   }
 
   // General API endpoints - relaxed limits
-  if (pathname.startsWith('/api/') && method === 'GET') {
+  // Exclude limited-drop from rate limiting (high-frequency polling, low-risk endpoint)
+  if (pathname.startsWith('/api/') && method === 'GET' && pathname !== '/api/limited-drop') {
     const rateLimitResponse = await applyRateLimit(apiLimiter, `api:${clientIP}`, request)
     if (rateLimitResponse) return rateLimitResponse
   }
