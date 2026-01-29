@@ -20,8 +20,8 @@ interface ProductsViewProps {
 
 const CART_STORAGE_KEY = 'holiday-cart'
 
-// Letter assignments for HOLIDAY - top row: H, O, L, I - bottom row: D, A, Y
-const LETTER_MAP = {
+// Letter assignments for HOLIDAY - Desktop: top row H, O, L, I - bottom row D, A, Y
+const DESKTOP_LETTER_MAP = {
   hoodie01: 'H',
   hoodie02: 'O',
   hoodie03: 'L',
@@ -31,12 +31,26 @@ const LETTER_MAP = {
   cart: 'Y',
 }
 
+// Mobile letter assignments - Shoe is at top with H, hoodies shift to O, L, I
+const MOBILE_LETTER_MAP = {
+  shoe: 'H',        // Shoe at top gets H
+  hoodie01: 'O',    // Hoodies shift down
+  hoodie02: 'L',
+  hoodie03: 'I',
+  teeShirt: 'D',    // Tee shifts to D
+  passwordProduct: 'A', // Password shifts to A
+  cart: 'Y',
+}
+
+// Combined type for all product keys
+type ProductKey = keyof typeof DESKTOP_LETTER_MAP
+
 export default function ProductsView({ isVisible, showAfterSpotlight = false, onOpenCoyoteBag, onCartAddCallback }: ProductsViewProps) {
   // Fetch products from Shopify "nine-year" collection
   const { products: collectionProducts, loading: productsLoading } = useNineYearCollection()
 
   // Track which letters are revealed when X is clicked
-  const [revealedLetters, setRevealedLetters] = useState<Record<keyof typeof LETTER_MAP, boolean>>({
+  const [revealedLetters, setRevealedLetters] = useState<Record<ProductKey, boolean>>({
     hoodie01: false,
     hoodie02: false,
     hoodie03: false,
@@ -152,11 +166,11 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
     }
   }
 
-  const revealLetter = (productKey: keyof typeof revealedLetters) => {
+  const revealLetter = (productKey: ProductKey) => {
     setRevealedLetters(prev => ({ ...prev, [productKey]: true }))
   }
 
-  const hideLetter = (productKey: keyof typeof revealedLetters) => {
+  const hideLetter = (productKey: ProductKey) => {
     setRevealedLetters(prev => ({ ...prev, [productKey]: false }))
   }
 
@@ -164,9 +178,9 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
     mobileCartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  // Render a product card with letter reveal functionality - mobile version
+  // Render a product card with letter reveal functionality - mobile version (uses MOBILE_LETTER_MAP)
   const renderMobileProductCard = (
-    key: keyof typeof LETTER_MAP,
+    key: ProductKey,
     card: React.ReactNode
   ) => {
     if (revealedLetters[key]) {
@@ -179,7 +193,7 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
             className='text-white text-[80px] leading-none select-none hover:scale-110 transition-transform duration-300'
             style={{ fontFamily: "'Holiday Content', sans-serif" }}
           >
-            {LETTER_MAP[key]}
+            {MOBILE_LETTER_MAP[key]}
           </span>
         </div>
       )
@@ -187,9 +201,9 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
     return card
   }
 
-  // Render a product card with letter reveal functionality - desktop version
+  // Render a product card with letter reveal functionality - desktop version (uses DESKTOP_LETTER_MAP)
   const renderDesktopProductCard = (
-    key: keyof typeof LETTER_MAP,
+    key: ProductKey,
     card: React.ReactNode
   ) => {
     if (revealedLetters[key]) {
@@ -202,7 +216,7 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
             className='text-white text-[120px] leading-none select-none hover:scale-110 transition-transform duration-300'
             style={{ fontFamily: "'Holiday Content', sans-serif" }}
           >
-            {LETTER_MAP[key]}
+            {DESKTOP_LETTER_MAP[key]}
           </span>
         </div>
       )
@@ -227,7 +241,19 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
               topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
             }`}
           >
-            {/* Product 1: Hoodie 01 (H) */}
+            {/* Product 1: Shoe (H on mobile) - First position on mobile */}
+            <div className='w-full'>
+              {renderMobileProductCard(
+                'shoe',
+                <MobileShoeCard
+                  product={collectionProducts.shoe}
+                  onClose={() => revealLetter('shoe')}
+                  onAddToCart={addToCart}
+                />
+              )}
+            </div>
+
+            {/* Product 2: Hoodie 01 (O on mobile) */}
             <div className='w-full'>
               {renderMobileProductCard(
                 'hoodie01',
@@ -239,7 +265,7 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
               )}
             </div>
 
-            {/* Product 2: Hoodie 02 (O) */}
+            {/* Product 3: Hoodie 02 (L on mobile) */}
             <div className='w-full'>
               {renderMobileProductCard(
                 'hoodie02',
@@ -251,7 +277,7 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
               )}
             </div>
 
-            {/* Product 3: Hoodie 03 (L) */}
+            {/* Product 4: Hoodie 03 (I on mobile) */}
             <div className='w-full'>
               {renderMobileProductCard(
                 'hoodie03',
@@ -263,7 +289,7 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
               )}
             </div>
 
-            {/* Product 4: Tee Shirt (I) */}
+            {/* Product 5: Tee Shirt (D on mobile) */}
             <div className='w-full'>
               {renderMobileProductCard(
                 'teeShirt',
@@ -275,25 +301,13 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
               )}
             </div>
 
-            {/* Product 5: Password Product (D) */}
+            {/* Product 6: Password Product (A on mobile) */}
             <div className='w-full'>
               {renderMobileProductCard(
                 'passwordProduct',
                 <MobilePasswordCard
                   product={collectionProducts.passwordProduct}
                   onClose={() => revealLetter('passwordProduct')}
-                  onAddToCart={addToCart}
-                />
-              )}
-            </div>
-
-            {/* Product 6: Shoe (A) */}
-            <div className='w-full'>
-              {renderMobileProductCard(
-                'shoe',
-                <MobileShoeCard
-                  product={collectionProducts.shoe}
-                  onClose={() => revealLetter('shoe')}
                   onAddToCart={addToCart}
                 />
               )}
