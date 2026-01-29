@@ -180,7 +180,7 @@ export default function ShopPasswordGate({ children, isVisible, onAuthChange }: 
                     placeholder="enter password"
                     aria-describedby={error ? 'password-error' : undefined}
                     aria-invalid={error ? 'true' : 'false'}
-                    className={`w-full bg-transparent border-b-2 text-white text-center py-3 px-4 text-sm focus:outline-none transition-colors tracking-wider placeholder:text-gray-600 ${
+                    className={`w-full bg-transparent border-b-2 text-white text-center py-3 px-4 text-base focus:outline-none transition-colors tracking-wider placeholder:text-gray-600 ${
                       error
                         ? 'border-red-500 text-red-400'
                         : 'border-gray-600 focus:border-white'
