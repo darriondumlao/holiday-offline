@@ -9,6 +9,7 @@ import CenterModal from '@/components/CenterModal'
 import ModalSidebar from '@/components/ModalSidebar'
 import ImageSlideshowModal from '@/components/ImageSlideshowModal'
 import AnswersModal from '@/components/AnswersModal'
+import ProblemsModal from '@/components/ProblemsModal'
 import RamboModal from '@/components/RamboModal'
 import TopRightModal from '@/components/TopRightModal'
 import BouncingWrapper from '@/components/BouncingWrapper'
@@ -44,6 +45,7 @@ export default function Home() {
   const [showCenterModal, setShowCenterModal] = useState(false)
   const [showSlideshowModal, setShowSlideshowModal] = useState(false)
   const [showAnswersModal, setShowAnswersModal] = useState(false)
+  const [showProblemsModal, setShowProblemsModal] = useState(false)
   const [showRamboModal, setShowRamboModal] = useState(false)
   const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showLeftSidebar, setShowLeftSidebar] = useState(false)
@@ -107,6 +109,7 @@ export default function Home() {
     setShowSlideshowModal(true)
     setShowCenterModal(true)
     setShowAnswersModal(true)
+    setShowProblemsModal(true)
     setShowRamboModal(true)
     setShowTopRightModal(true)
   }, [])
@@ -140,7 +143,7 @@ export default function Home() {
     setAnswerError('')
 
     try {
-      const response = await fetch('/api/submit-answer', {
+      const response = await fetch('/api/submit-holiday-answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answer }),
@@ -286,19 +289,27 @@ export default function Home() {
                 />
               </BouncingWrapper>
             )}
-            {showCenterModal && (
+            {/* {showCenterModal && (
               <BouncingWrapper speed={1.8} initialDirection="ne" className="z-40" title="click the buttons">
                 <CenterModal
                   title='click the buttons'
                   onClose={() => setShowCenterModal(false)}
                 />
               </BouncingWrapper>
-            )}
+            )} */}
             {showAnswersModal && (
               <BouncingWrapper speed={1.3} initialDirection="sw" className="z-40" title="what would you miss tomorrow?">
                 <AnswersModal
                   title='what would you miss tomorrow?'
                   onClose={() => setShowAnswersModal(false)}
+                />
+              </BouncingWrapper>
+            )}
+            {showProblemsModal && (
+              <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title='what problem do you wish you could solve?'>
+                <ProblemsModal
+                  title='what problem do you wish you could solve?'
+                  onClose={() => setShowProblemsModal(false)}
                 />
               </BouncingWrapper>
             )}
@@ -372,7 +383,7 @@ export default function Home() {
                 className='flex flex-col items-center space-y-6'
               >
                 <h1 className="text-xs sm:text-sm tracking-widest font-light text-white">
-                  Q: what problem do you wish you could solve?
+                  Q: what do you think of when you hear the word "holiday"?
                 </h1>
 
                 <form onSubmit={handleAnswerSubmit} className='w-full max-w-xs'>
