@@ -35,7 +35,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
   // 1. Manual sold out is enabled (instant override), OR
   // 2. Drop is active AND timer started AND timer hit zero
   // When drop is inactive or timer not started, fall back to Shopify's availableForSale
-  const timerRunning = isActive && startedAt
+  const timerRunning = isActive && !!startedAt
   const isSoldOut = (isActive && manualSoldOut) || (timerRunning && timerSoldOut)
 
   if (!product) {

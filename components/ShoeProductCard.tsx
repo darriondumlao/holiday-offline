@@ -36,11 +36,8 @@ export default function ShoeProductCard({ title, onClose, onAddToCart, product }
   // 1. Manual sold out is enabled (instant override), OR
   // 2. Drop is active AND timer started AND timer hit zero
   // When drop is inactive or timer not started, fall back to Shopify's availableForSale
-  const timerRunning = isActive && startedAt
+  const timerRunning = isActive && !!startedAt
   const isSoldOut = (isActive && manualSoldOut) || (timerRunning && timerSoldOut)
-
-  // Debug logging
-  console.log('ShoeProductCard state:', { isActive, manualSoldOut, startedAt, timerSoldOut, timerRunning, isSoldOut })
 
   const handleOffline = () => {
     window.open('https://holidaybrand.co', '_blank', 'noopener,noreferrer')
