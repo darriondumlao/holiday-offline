@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 // Retro ad font for product pages
@@ -52,6 +53,7 @@ export default function RootLayout({
       </head>
       <body className={`antialiased ${bebasNeue.variable}`}>
         {children}
+        <Analytics />
       </body>
     </html>
   );
