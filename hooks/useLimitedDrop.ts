@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 
 interface LimitedDropData {
   isActive: boolean
+  manualSoldOut: boolean
   startedAt: string | null
   dropName?: string
 }
@@ -25,6 +26,7 @@ export function useLimitedDrop() {
         if (data.drop) {
           setDropData({
             isActive: data.drop.isActive ?? false,
+            manualSoldOut: data.drop.manualSoldOut ?? false,
             startedAt: data.drop.startedAt ?? null,
             dropName: data.drop.dropName,
           })
@@ -41,15 +43,16 @@ export function useLimitedDrop() {
 
     fetchLimitedDrop()
 
-    // Poll every 60 seconds to check for updates from Sanity
-    // Reduced from 30s to minimize API calls and improve performance
-    const interval = setInterval(fetchLimitedDrop, 60000)
+    // Poll every 5 seconds to check for updates from Sanity
+    // Fast polling ensures drops appear almost immediately when activated
+    const interval = setInterval(fetchLimitedDrop, 5000)
 
     return () => clearInterval(interval)
   }, [])
 
   return {
     isActive: dropData?.isActive ?? false,
+    manualSoldOut: dropData?.manualSoldOut ?? false,
     startedAt: dropData?.startedAt ?? null,
     dropName: dropData?.dropName,
     loading,

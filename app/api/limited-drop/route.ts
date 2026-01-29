@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server'
 import { getActiveLimitedDrop } from '@/lib/sanity'
 import { unstable_cache } from 'next/cache'
 
-// Cache limited drop data for 30 seconds
-// This reduces Sanity API calls while still being responsive to drop activations
+// Cache limited drop data for 5 seconds only
+// Short cache ensures drops appear almost immediately when activated
 const getCachedLimitedDrop = unstable_cache(
   async () => {
     return getActiveLimitedDrop()
   },
   ['limited-drop'],
   {
-    revalidate: 30, // 30 seconds cache
+    revalidate: 5, // 5 seconds cache - fast refresh
     tags: ['sanity', 'limited-drop'],
   }
 )
@@ -25,7 +25,7 @@ export async function GET() {
         { drop: null },
         {
           headers: {
-            'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+            'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=10',
           },
         }
       )
@@ -37,12 +37,13 @@ export async function GET() {
         drop: {
           dropName: drop.dropName,
           isActive: drop.isActive,
+          manualSoldOut: drop.manualSoldOut ?? false,
           startedAt: drop.startedAt,
         },
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=10',
         },
       }
     )

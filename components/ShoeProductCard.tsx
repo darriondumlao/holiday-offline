@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import ImageScroller from './ImageScroller'
-import Lightbox from './Lightbox'
+import ProductDetailsLightbox from './ProductDetailsLightbox'
 import LimitedDropTimer from './LimitedDropTimer'
 import { useLimitedDrop } from '@/hooks/useLimitedDrop'
 import { Product, ProductVariant } from '@/lib/shopify'
@@ -17,8 +17,14 @@ interface ShoeProductCardProps {
 export default function ShoeProductCard({ title, onClose, onAddToCart, product }: ShoeProductCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
-  const [isSoldOut, setIsSoldOut] = useState(false)
-  const { isActive, startedAt } = useLimitedDrop()
+  const [timerSoldOut, setTimerSoldOut] = useState(false)
+  const { isActive, manualSoldOut, startedAt } = useLimitedDrop()
+
+  // Show "sold out" if:
+  // 1. Manual sold out is enabled (instant override), OR
+  // 2. Drop is active AND timer hit zero
+  // When drop is inactive, fall back to Shopify's availableForSale
+  const isSoldOut = (isActive && manualSoldOut) || (isActive && timerSoldOut)
 
   const handleOffline = () => {
     window.open('https://holidaybrand.co', '_blank', 'noopener,noreferrer')
@@ -87,18 +93,35 @@ export default function ShoeProductCard({ title, onClose, onAddToCart, product }
           <LimitedDropTimer
             startedAt={startedAt}
             isActive={isActive}
-            onSoldOut={() => setIsSoldOut(true)}
+            manualSoldOut={manualSoldOut}
+            onSoldOut={() => setTimerSoldOut(true)}
           />
         </div>
 
-        {/* Lightbox */}
+        {/* Product Details Lightbox */}
         {lightboxOpen && images.length > 0 && (
-          <Lightbox
+          <ProductDetailsLightbox
             images={images}
             initialIndex={lightboxIndex}
             alt={product.name}
+            description={product.description}
             onClose={() => setLightboxOpen(false)}
           />
+        )}
+
+        {/* See Details Link - centered below image */}
+        {images.length > 0 && (
+          <div className='bg-[#1a1a1a] py-1'>
+            <button
+              onClick={() => {
+                setLightboxIndex(0)
+                setLightboxOpen(true)
+              }}
+              className='text-white/50 hover:text-white/80 text-[10px] tracking-wide w-full text-center transition-colors'
+            >
+              see details
+            </button>
+          </div>
         )}
 
         {/* Size Selector - horizontal scroll single row */}

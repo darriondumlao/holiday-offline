@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Product, ProductVariant } from '@/lib/shopify'
-import Lightbox from './Lightbox'
+import ProductDetailsLightbox from './ProductDetailsLightbox'
 
 interface MobileProductCardProps {
   product: Product | null
@@ -82,13 +82,26 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
         )}
       </div>
 
-      {/* Lightbox */}
+      {/* Product Details Lightbox */}
       {lightboxOpen && images.length > 0 && (
-        <Lightbox
+        <ProductDetailsLightbox
           images={images}
           alt={product.name}
+          description={product.description}
           onClose={() => setLightboxOpen(false)}
         />
+      )}
+
+      {/* See Details Link - centered below image */}
+      {images.length > 0 && (
+        <div className='bg-[#1a1a1a] py-1'>
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className='text-white/50 hover:text-white/80 text-[10px] tracking-wide w-full text-center transition-colors'
+          >
+            see details
+          </button>
+        </div>
       )}
 
       {/* Footer - Add to Cart / Size Selector */}

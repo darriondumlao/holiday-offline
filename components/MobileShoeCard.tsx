@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Product, ProductVariant } from '@/lib/shopify'
-import Lightbox from './Lightbox'
+import ProductDetailsLightbox from './ProductDetailsLightbox'
 import LimitedDropTimer from './LimitedDropTimer'
 import { useLimitedDrop } from '@/hooks/useLimitedDrop'
 
@@ -16,8 +16,14 @@ interface MobileShoeCardProps {
 export default function MobileShoeCard({ product, onAddToCart, onClose }: MobileShoeCardProps) {
   const [showSizes, setShowSizes] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [isSoldOut, setIsSoldOut] = useState(false)
-  const { isActive, startedAt } = useLimitedDrop()
+  const [timerSoldOut, setTimerSoldOut] = useState(false)
+  const { isActive, manualSoldOut, startedAt } = useLimitedDrop()
+
+  // Show "sold out" if:
+  // 1. Manual sold out is enabled (instant override), OR
+  // 2. Drop is active AND timer hit zero
+  // When drop is inactive, fall back to Shopify's availableForSale
+  const isSoldOut = (isActive && manualSoldOut) || (isActive && timerSoldOut)
 
   if (!product) {
     // Fallback placeholder
@@ -111,17 +117,31 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
         <LimitedDropTimer
           startedAt={startedAt}
           isActive={isActive}
-          onSoldOut={() => setIsSoldOut(true)}
+          manualSoldOut={manualSoldOut}
+          onSoldOut={() => setTimerSoldOut(true)}
         />
       </div>
 
-      {/* Lightbox */}
+      {/* Product Details Lightbox */}
       {lightboxOpen && images.length > 0 && (
-        <Lightbox
+        <ProductDetailsLightbox
           images={images}
           alt={product.name}
+          description={product.description}
           onClose={() => setLightboxOpen(false)}
         />
+      )}
+
+      {/* See Details Link - centered below image */}
+      {images.length > 0 && (
+        <div className='bg-[#1a1a1a] py-1'>
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className='text-white/50 hover:text-white/80 text-[10px] tracking-wide w-full text-center transition-colors'
+          >
+            see details
+          </button>
+        </div>
       )}
 
       {/* Footer */}

@@ -5,12 +5,13 @@ import { useState, useEffect, useCallback } from 'react'
 interface LimitedDropTimerProps {
   startedAt: string | null
   isActive: boolean
+  manualSoldOut?: boolean
   onSoldOut?: () => void
 }
 
-// Total duration: 15 minutes = 900 seconds
+// Total duration: 10 minutes = 600 seconds
 // Steps: 99 to 0 = 99 transitions
-// We need to pre-generate random intervals that sum to 900 seconds
+// We need to pre-generate random intervals that sum to 600 seconds
 // Using a seeded approach based on startedAt to ensure consistency across clients
 
 function generateIntervals(seed: number): number[] {
@@ -25,7 +26,7 @@ function generateIntervals(seed: number): number[] {
   }
 
   const random = seededRandom(seed)
-  const totalSeconds = 900 // 15 minutes
+  const totalSeconds = 600 // 10 minutes
   const steps = 99 // 99 to 0
 
   // Generate random weights for each step
@@ -72,24 +73,32 @@ function calculateCurrentValue(startedAt: string, intervals: number[]): { value:
   return { value: 0, soldOut: true }
 }
 
-export default function LimitedDropTimer({ startedAt, isActive, onSoldOut }: LimitedDropTimerProps) {
+export default function LimitedDropTimer({ startedAt, isActive, manualSoldOut, onSoldOut }: LimitedDropTimerProps) {
   const [displayValue, setDisplayValue] = useState<number | null>(null)
   const [soldOut, setSoldOut] = useState(false)
   const [intervals, setIntervals] = useState<number[]>([])
 
+  // Handle manual sold out - trigger immediately when enabled
+  useEffect(() => {
+    if (manualSoldOut && isActive && !soldOut) {
+      setSoldOut(true)
+      onSoldOut?.()
+    }
+  }, [manualSoldOut, isActive, soldOut, onSoldOut])
+
   // Generate intervals once based on startedAt
   useEffect(() => {
-    if (startedAt) {
+    if (startedAt && !manualSoldOut) {
       // Use timestamp as seed for consistent intervals across all clients
       const seed = new Date(startedAt).getTime()
       const generatedIntervals = generateIntervals(seed)
       setIntervals(generatedIntervals)
     }
-  }, [startedAt])
+  }, [startedAt, manualSoldOut])
 
   // Update the display value based on elapsed time
   const updateValue = useCallback(() => {
-    if (!startedAt || !isActive || intervals.length === 0) {
+    if (!startedAt || !isActive || intervals.length === 0 || manualSoldOut) {
       setDisplayValue(null)
       return
     }
@@ -101,10 +110,15 @@ export default function LimitedDropTimer({ startedAt, isActive, onSoldOut }: Lim
       setSoldOut(true)
       onSoldOut?.()
     }
-  }, [startedAt, isActive, intervals, soldOut, onSoldOut])
+  }, [startedAt, isActive, intervals, soldOut, manualSoldOut, onSoldOut])
 
   // Poll frequently for smooth updates
   useEffect(() => {
+    if (manualSoldOut) {
+      // Manual sold out doesn't need timer updates
+      return
+    }
+
     if (!startedAt || !isActive || intervals.length === 0) {
       setDisplayValue(null)
       setSoldOut(false)
@@ -118,7 +132,16 @@ export default function LimitedDropTimer({ startedAt, isActive, onSoldOut }: Lim
     const interval = setInterval(updateValue, 100)
 
     return () => clearInterval(interval)
-  }, [startedAt, isActive, intervals, updateValue])
+  }, [startedAt, isActive, intervals, manualSoldOut, updateValue])
+
+  // If manual sold out is enabled, show sold out immediately
+  if (manualSoldOut && isActive) {
+    return (
+      <div className='absolute top-2 right-2 z-10 rounded-full px-3 py-1.5 font-bold text-sm shadow-lg bg-red-600 text-white animate-pulse'>
+        SOLD OUT
+      </div>
+    )
+  }
 
   // Don't render if not active or no start time
   if (!isActive || !startedAt || displayValue === null) {

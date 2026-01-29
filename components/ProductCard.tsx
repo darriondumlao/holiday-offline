@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import ModalWrapper from './ModalWrapper'
 import ImageScroller from './ImageScroller'
-import Lightbox from './Lightbox'
+import ProductDetailsLightbox from './ProductDetailsLightbox'
 import { Product, ProductVariant } from '@/lib/shopify'
 
 interface ProductCardProps {
@@ -92,14 +92,30 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* Lightbox */}
+        {/* Product Details Lightbox */}
         {lightboxOpen && images.length > 0 && (
-          <Lightbox
+          <ProductDetailsLightbox
             images={images}
             initialIndex={lightboxIndex}
             alt={product.name}
+            description={product.description}
             onClose={() => setLightboxOpen(false)}
           />
+        )}
+
+        {/* See Details Link - centered below image */}
+        {images.length > 0 && (
+          <div className='bg-[#1a1a1a] py-1'>
+            <button
+              onClick={() => {
+                setLightboxIndex(0)
+                setLightboxOpen(true)
+              }}
+              className='text-white/50 hover:text-white/80 text-[10px] tracking-wide w-full text-center transition-colors'
+            >
+              see details
+            </button>
+          </div>
         )}
 
         {/* Size Selector - clicking a size directly adds to cart */}

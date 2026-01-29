@@ -67,6 +67,7 @@ export interface LimitedDrop {
   productId?: { _ref: string }
   dropName: string
   isActive: boolean
+  manualSoldOut?: boolean
   startedAt?: string
   sizeTimers: SizeTimer[]
 }
@@ -323,6 +324,7 @@ export async function getActiveLimitedDrop(): Promise<LimitedDrop | null> {
       _id,
       dropName,
       isActive,
+      manualSoldOut,
       startedAt,
       sizeTimers[] {
         _key,
