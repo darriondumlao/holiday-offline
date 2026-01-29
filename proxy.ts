@@ -1,5 +1,5 @@
 /**
- * Next.js 16 Proxy - Rate Limiting & Shop Password Protection
+ * Next.js 16 Proxy - Rate Limiting
  *
  * This file replaces the deprecated middleware.ts convention.
  * It runs at the network boundary before requests reach your application.
@@ -42,9 +42,6 @@ const apiLimiter = new Ratelimit({
   prefix: 'ratelimit:api',
 })
 
-// Cookie name for shop authentication
-const SHOP_AUTH_COOKIE = 'shop_authenticated'
-
 /**
  * Get client IP address from request headers
  */
@@ -69,10 +66,9 @@ function getClientIP(request: NextRequest): string {
 async function applyRateLimit(
   limiter: Ratelimit,
   identifier: string,
-  request: NextRequest
 ): Promise<NextResponse | null> {
   try {
-    const { success, limit, remaining, reset } = await limiter.limit(identifier)
+    const { success, limit, reset } = await limiter.limit(identifier)
 
     if (!success) {
       return NextResponse.json(
@@ -99,33 +95,6 @@ async function applyRateLimit(
   }
 }
 
-/**
- * Check if shop password is required and validate
- */
-function checkShopAuth(request: NextRequest): NextResponse | null {
-  const shopPassword = process.env.SHOP_PASSWORD
-
-  // If no password is set, shop is open
-  if (!shopPassword) {
-    return null
-  }
-
-  // Check if already authenticated via cookie
-  const authCookie = request.cookies.get(SHOP_AUTH_COOKIE)
-  if (authCookie?.value === 'true') {
-    return null
-  }
-
-  // Not authenticated - return 401 with instructions
-  return NextResponse.json(
-    {
-      error: 'Shop access requires authentication',
-      requiresPassword: true
-    },
-    { status: 401 }
-  )
-}
-
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const method = request.method
@@ -137,7 +106,7 @@ export async function proxy(request: NextRequest) {
 
   // Checkout endpoint - strictest limits
   if (pathname === '/api/shopify/checkout' && method === 'POST') {
-    const rateLimitResponse = await applyRateLimit(checkoutLimiter, `checkout:${clientIP}`, request)
+    const rateLimitResponse = await applyRateLimit(checkoutLimiter, `checkout:${clientIP}`)
     if (rateLimitResponse) return rateLimitResponse
   }
 
@@ -146,35 +115,15 @@ export async function proxy(request: NextRequest) {
     (pathname === '/api/subscribe' && method === 'POST') ||
     (pathname === '/api/submit-answer' && method === 'POST')
   ) {
-    const rateLimitResponse = await applyRateLimit(formLimiter, `form:${clientIP}`, request)
+    const rateLimitResponse = await applyRateLimit(formLimiter, `form:${clientIP}`)
     if (rateLimitResponse) return rateLimitResponse
   }
 
   // General API endpoints - relaxed limits
   // Exclude limited-drop from rate limiting (high-frequency polling, low-risk endpoint)
   if (pathname.startsWith('/api/') && method === 'GET' && pathname !== '/api/limited-drop') {
-    const rateLimitResponse = await applyRateLimit(apiLimiter, `api:${clientIP}`, request)
+    const rateLimitResponse = await applyRateLimit(apiLimiter, `api:${clientIP}`)
     if (rateLimitResponse) return rateLimitResponse
-  }
-
-  // =========================================
-  // SHOP PASSWORD PROTECTION
-  // =========================================
-
-  // Only protect the 'offline' collection (the shop) - other collections are public
-  if (pathname === '/api/shopify/collection') {
-    const handle = request.nextUrl.searchParams.get('handle')
-    // Only protect the 'offline' collection which is the shop
-    if (handle === 'offline') {
-      const authResponse = checkShopAuth(request)
-      if (authResponse) return authResponse
-    }
-  }
-
-  // Protect checkout endpoint (requires shop access)
-  if (pathname === '/api/shopify/checkout') {
-    const authResponse = checkShopAuth(request)
-    if (authResponse) return authResponse
   }
 
   // Continue to the application

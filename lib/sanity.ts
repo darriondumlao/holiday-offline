@@ -1,5 +1,5 @@
 import { createClient } from '@sanity/client'
-import imageUrlBuilder from '@sanity/image-url'
+import { createImageUrlBuilder } from '@sanity/image-url'
 
 // Sanity client (for holiday4nick project - ticker, lookbooks, radio, etc.)
 export const sanityClient = createClient({
@@ -11,12 +11,12 @@ export const sanityClient = createClient({
 })
 
 // Image URL builder
-const builder = imageUrlBuilder(sanityClient)
+const builder = createImageUrlBuilder(sanityClient)
 export function urlFor(source: any) {
   return builder.image(source)
 }
 
-export { imageUrlBuilder }
+export { createImageUrlBuilder }
 
 // Alias for clarity when using holiday4nick data
 export const holiday4nickClient = sanityClient

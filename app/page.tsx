@@ -16,7 +16,6 @@ import BouncingWrapper from '@/components/BouncingWrapper'
 import CountdownTimer from '@/components/CountdownTimer'
 import ProductsView from '@/components/ProductsView'
 import TickerHeader from '@/components/TickerHeader'
-import ShopPasswordGate from '@/components/ShopPasswordGate'
 import CoyoteBagModal from '@/components/CoyoteBagModal'
 
 export default function Home() {
@@ -52,7 +51,6 @@ export default function Home() {
   const [showRightSidebar, setShowRightSidebar] = useState(false)
   const [showProductsView, setShowProductsView] = useState(true) // Shop view shows first
   const [showCoyoteBagModal, setShowCoyoteBagModal] = useState(false)
-  const [isShopAuthenticated, setIsShopAuthenticated] = useState(false)
   const addToCartRef = useRef<((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) | null>(null)
 
   // Callback to receive addToCart function from ProductsView
@@ -237,27 +235,22 @@ export default function Home() {
         onToggleView={setShowProductsView}
         showAfterSpotlight={!showSpotlight}
         onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
-        isShopAuthenticated={isShopAuthenticated}
       />
 
-      {/* Products View - Shows by default, waits for spotlight, protected by password */}
-      <ShopPasswordGate isVisible={showProductsView} onAuthChange={setIsShopAuthenticated}>
-        <ProductsView
-          isVisible={showProductsView}
-          showAfterSpotlight={!showSpotlight}
-          onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
-          onCartAddCallback={handleCartAddCallback}
-        />
-      </ShopPasswordGate>
+      {/* Products View - Shows by default, waits for spotlight */}
+      <ProductsView
+        isVisible={showProductsView}
+        showAfterSpotlight={!showSpotlight}
+        onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
+        onCartAddCallback={handleCartAddCallback}
+      />
 
-      {/* Coyote Bag Modal - only renders when shop is authenticated */}
-      {isShopAuthenticated && (
-        <CoyoteBagModal
-          isOpen={showCoyoteBagModal}
-          onAddToCart={handleAddCoyoteBagToCart}
-          onClose={() => setShowCoyoteBagModal(false)}
-        />
-      )}
+      {/* Coyote Bag Modal */}
+      <CoyoteBagModal
+        isOpen={showCoyoteBagModal}
+        onAddToCart={handleAddCoyoteBagToCart}
+        onClose={() => setShowCoyoteBagModal(false)}
+      />
 
       {/* Spotlight Effect - Always visible regardless of view */}
       {showSpotlight && (
