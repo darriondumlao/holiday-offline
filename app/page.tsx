@@ -48,7 +48,7 @@ export default function Home() {
   const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showLeftSidebar, setShowLeftSidebar] = useState(false)
   const [showRightSidebar, setShowRightSidebar] = useState(false)
-  const [showProductsView, setShowProductsView] = useState(false) // Offline view shows first
+  const [showProductsView, setShowProductsView] = useState(true) // Shop view shows first
   const [showCoyoteBagModal, setShowCoyoteBagModal] = useState(false)
   const [isShopAuthenticated, setIsShopAuthenticated] = useState(false)
   const addToCartRef = useRef<((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) | null>(null)
