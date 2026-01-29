@@ -43,9 +43,9 @@ export function useLimitedDrop() {
 
     fetchLimitedDrop()
 
-    // Poll every 5 seconds to check for updates from Sanity
-    // Fast polling ensures drops appear almost immediately when activated
-    const interval = setInterval(fetchLimitedDrop, 5000)
+    // Poll every 15 seconds to check for updates from Sanity
+    // Balances responsiveness with API usage limits
+    const interval = setInterval(fetchLimitedDrop, 15000)
 
     return () => clearInterval(interval)
   }, [])

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Product, ProductVariant } from '@/lib/shopify'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
@@ -19,11 +19,24 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
   const [timerSoldOut, setTimerSoldOut] = useState(false)
   const { isActive, manualSoldOut, startedAt } = useLimitedDrop()
 
+  // Reset timerSoldOut when drop becomes inactive or a new drop starts
+  useEffect(() => {
+    if (!isActive) {
+      setTimerSoldOut(false)
+    }
+  }, [isActive])
+
+  // Reset timerSoldOut when startedAt changes (new drop started)
+  useEffect(() => {
+    setTimerSoldOut(false)
+  }, [startedAt])
+
   // Show "sold out" if:
   // 1. Manual sold out is enabled (instant override), OR
-  // 2. Drop is active AND timer hit zero
-  // When drop is inactive, fall back to Shopify's availableForSale
-  const isSoldOut = (isActive && manualSoldOut) || (isActive && timerSoldOut)
+  // 2. Drop is active AND timer started AND timer hit zero
+  // When drop is inactive or timer not started, fall back to Shopify's availableForSale
+  const timerRunning = isActive && startedAt
+  const isSoldOut = (isActive && manualSoldOut) || (timerRunning && timerSoldOut)
 
   if (!product) {
     // Fallback placeholder
