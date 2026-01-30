@@ -292,7 +292,7 @@ export default function CoyoteBagModal({ isOpen, onClose, onAddToCart }: CoyoteB
 
                     {/* Description */}
                     {product?.description && (
-                      <p className="text-gray-600 text-[10px] md:text-sm leading-relaxed pt-1 md:pt-2 border-t border-gray-100 line-clamp-3 md:line-clamp-none">
+                      <p className="text-gray-600 text-[10px] md:text-sm leading-relaxed pt-1 md:pt-2 border-t border-gray-100">
                         {product.description}
                       </p>
                     )}
