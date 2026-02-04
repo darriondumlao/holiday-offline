@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import ProductCard from './ProductCard'
 import ShoeProductCard from './ShoeProductCard'
-import PasswordProductCard from './PasswordProductCard'
 import MobileProductCard from './MobileProductCard'
 import MobileShoeCard from './MobileShoeCard'
-import MobilePasswordCard from './MobilePasswordCard'
 import CartModal, { CartItem } from './CartModal'
 import { useNineYearCollection } from '@/hooks/useNineYearCollection'
 import { createCheckoutClient } from '@/lib/shopify'
@@ -301,11 +299,11 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
               )}
             </div>
 
-            {/* Product 6: Password Product (A on mobile) */}
+            {/* Product 6: Coyote Bag (A on mobile) */}
             <div className='w-full'>
               {renderMobileProductCard(
                 'passwordProduct',
-                <MobilePasswordCard
+                <MobileProductCard
                   product={collectionProducts.passwordProduct}
                   onClose={() => revealLetter('passwordProduct')}
                   onAddToCart={addToCart}
@@ -325,10 +323,6 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
                     onUpdateQuantity={updateQuantity}
                     onRemoveItem={removeFromCart}
                     onCheckout={handleCheckout}
-                    onAddShirt={addToCart}
-                    onAddCoyoteBag={addToCart}
-                    teeShirtProduct={collectionProducts.teeShirt}
-                    coyoteBagProduct={collectionProducts.coyoteBag}
                     isMobileEmbedded
                   />
                 </div>
@@ -408,8 +402,10 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
             <div className='flex-1 max-w-[360px]'>
               {renderDesktopProductCard(
                 'passwordProduct',
-                <PasswordProductCard
+                <ProductCard
                   title='january 29th'
+                  productName='coyote'
+                  productDetail='bag'
                   onClose={() => revealLetter('passwordProduct')}
                   product={collectionProducts.passwordProduct}
                   onAddToCart={addToCart}
@@ -437,10 +433,6 @@ export default function ProductsView({ isVisible, showAfterSpotlight = false, on
                   onUpdateQuantity={updateQuantity}
                   onRemoveItem={removeFromCart}
                   onCheckout={handleCheckout}
-                  onAddShirt={addToCart}
-                  onAddCoyoteBag={addToCart}
-                  teeShirtProduct={collectionProducts.teeShirt}
-                  coyoteBagProduct={collectionProducts.coyoteBag}
                 />
               )}
             </div>

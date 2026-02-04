@@ -4,6 +4,7 @@ import { useState } from 'react'
 import ModalWrapper from './ModalWrapper'
 import ImageScroller from './ImageScroller'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
+import LimitedDropTimer from './LimitedDropTimer'
 import { Product, ProductVariant } from '@/lib/shopify'
 
 interface ProductCardProps {
@@ -46,6 +47,9 @@ export default function ProductCard({
   const allVariants = product?.variants || []
   const images = product?.images.map(img => img.url) || []
 
+  // Check if product is sold out (no variants available for sale)
+  const isSoldOut = allVariants.length === 0 || allVariants.every(v => !v.availableForSale)
+
   // If we have product data, show the product with images (or title fallback) and size selector
   if (product) {
     return (
@@ -74,7 +78,13 @@ export default function ProductCard({
         </div>
 
         {/* Content Area - Image Scroller or Title Fallback */}
-        <div className='h-[120px] md:h-[216px]'>
+        <div className='h-[120px] md:h-[216px] relative'>
+          {/* Sold Out Pill */}
+          <LimitedDropTimer
+            isActive={isSoldOut}
+            manualSoldOut={isSoldOut}
+            startedAt={null}
+          />
           {images.length > 0 ? (
             <ImageScroller
               images={images}
@@ -118,27 +128,44 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* Size Selector - clicking a size directly adds to cart */}
+        {/* Size Selector or Add to Cart button */}
         <div className='bg-blue-600 px-2 py-2 rounded-b-sm'>
-          <div className='flex flex-wrap gap-1 justify-center'>
-            {allVariants.map((variant) => (
+          {/* Single variant with default title - show Add to Cart button */}
+          {allVariants.length === 1 && allVariants[0].size.toLowerCase() === 'default title' ? (
+            <div className='flex justify-center'>
               <button
-                key={variant.id}
-                onClick={() => variant.availableForSale && handleSizeSelect(variant)}
-                disabled={!variant.availableForSale}
-                className={`border-2 border-black font-bold px-2 py-1 text-xs transition-all ${
-                  variant.availableForSale
+                onClick={() => allVariants[0].availableForSale && handleSizeSelect(allVariants[0])}
+                disabled={!allVariants[0].availableForSale}
+                className={`border-2 border-black font-bold px-3 py-1 text-xs transition-all ${
+                  allVariants[0].availableForSale
                     ? 'bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 text-black cursor-pointer'
                     : 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
                 }`}
               >
-                {variant.size}
+                {allVariants[0].availableForSale ? 'add to cart' : 'sold out'}
               </button>
-            ))}
-            {allVariants.length === 0 && (
-              <span className='text-white text-xs'>sold out</span>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className='flex flex-wrap gap-1 justify-center'>
+              {allVariants.map((variant) => (
+                <button
+                  key={variant.id}
+                  onClick={() => variant.availableForSale && handleSizeSelect(variant)}
+                  disabled={!variant.availableForSale}
+                  className={`border-2 border-black font-bold px-2 py-1 text-xs transition-all ${
+                    variant.availableForSale
+                      ? 'bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 text-black cursor-pointer'
+                      : 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  {variant.size}
+                </button>
+              ))}
+              {allVariants.length === 0 && (
+                <span className='text-white text-xs'>sold out</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     )

@@ -9,9 +9,8 @@ const PRODUCT_MAPPINGS = {
   hoodie02: 'campus hoodie (south harmon)',
   hoodie03: 'campus hoodie (baylor)',
   shoe: '"dream-on" rambo',
-  passwordProduct: 'anniversary hat',
+  passwordProduct: 'coyote bag',
   teeShirt: 'anniversary $9 tee',
-  coyoteBag: 'coyote bag',
 } as const
 
 type ProductSlot = keyof typeof PRODUCT_MAPPINGS
@@ -30,7 +29,6 @@ export function useNineYearCollection(): NineYearCollectionData {
     shoe: null,
     passwordProduct: null,
     teeShirt: null,
-    coyoteBag: null,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +47,6 @@ export function useNineYearCollection(): NineYearCollectionData {
           shoe: null,
           passwordProduct: null,
           teeShirt: null,
-          coyoteBag: null,
         }
 
         for (const product of collectionProducts) {

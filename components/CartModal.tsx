@@ -1,8 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-import { Product, ProductVariant } from '@/lib/shopify'
-
 export interface CartItem {
   id: string
   name: string
@@ -20,10 +17,6 @@ interface CartModalProps {
   onUpdateQuantity?: (id: string, quantity: number) => void
   onRemoveItem?: (id: string) => void
   onCheckout?: () => void
-  onAddShirt?: (product: { name: string; price: number; size: string; variantId: string }) => void
-  onAddCoyoteBag?: (product: { name: string; price: number; size: string; variantId: string }) => void
-  teeShirtProduct?: Product | null
-  coyoteBagProduct?: Product | null
   isMobileEmbedded?: boolean
 }
 
@@ -34,14 +27,8 @@ export default function CartModal({
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
-  onAddShirt,
-  onAddCoyoteBag,
-  teeShirtProduct,
-  coyoteBagProduct,
   isMobileEmbedded = false
 }: CartModalProps) {
-  const [showSizeSelector, setShowSizeSelector] = useState(false)
-
   const handleCheckout = () => {
     if (onCheckout) {
       onCheckout()
@@ -50,21 +37,6 @@ export default function CartModal({
       window.open('https://holidaybrand.co/checkout', '_blank', 'noopener,noreferrer')
     }
   }
-
-  const handleSizeSelect = (variant: ProductVariant) => {
-    if (onAddShirt && teeShirtProduct) {
-      onAddShirt({
-        name: teeShirtProduct.name,
-        price: variant.price,
-        size: variant.size,
-        variantId: variant.id,
-      })
-    }
-    setShowSizeSelector(false)
-  }
-
-  // Get available variants from the tee shirt product
-  const availableVariants = teeShirtProduct?.variants || []
 
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -122,7 +94,7 @@ export default function CartModal({
                     <div className='text-black text-xs font-bold uppercase truncate'>
                       {item.name}
                     </div>
-                    {item.size && (
+                    {item.size && item.size.toLowerCase() !== 'default title' && (
                       <div className='text-gray-500 text-xs'>
                         Size: {item.size}
                       </div>
@@ -183,70 +155,6 @@ export default function CartModal({
           )}
         </div>
 
-        {/* Upsell Buttons - Inside content area */}
-        {(onAddShirt || onAddCoyoteBag) && (
-          <div className='px-3 py-1.5 border-t border-gray-200'>
-            {showSizeSelector ? (
-              <div className='animate-fade-in'>
-                <div className='flex items-center justify-center gap-1 mb-1'>
-                  <span className='text-black text-[9px] font-bold uppercase'>Select Size</span>
-                  <button
-                    onClick={() => setShowSizeSelector(false)}
-                    className='text-gray-500 hover:text-black transition-colors'
-                    aria-label='Cancel'
-                  >
-                    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' className='w-3 h-3'>
-                      <path d='M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z' />
-                    </svg>
-                  </button>
-                </div>
-                <div className='flex flex-wrap gap-0.5 justify-center'>
-                  {availableVariants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => variant.availableForSale && handleSizeSelect(variant)}
-                      disabled={!variant.availableForSale}
-                      className={`border border-black font-bold py-0.5 px-2 text-[9px] transition-all ${
-                        variant.availableForSale
-                          ? 'bg-gray-200 text-black hover:bg-black hover:text-white active:scale-95 cursor-pointer'
-                          : 'bg-gray-400 text-gray-500 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      {variant.size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className='flex justify-center gap-2'>
-                {onAddShirt && teeShirtProduct && availableVariants.length > 0 && (
-                  <button
-                    onClick={() => setShowSizeSelector(true)}
-                    className='bg-gray-200 hover:bg-white hover:scale-[1.02] active:scale-[0.98] transition-all border-2 border-black text-black font-bold px-3 py-1 text-[10px] uppercase cursor-pointer'
-                  >
-                    add ${teeShirtProduct.variants[0]?.price || 9} t-shirt
-                  </button>
-                )}
-                {onAddCoyoteBag && coyoteBagProduct && coyoteBagProduct.variants[0] && (
-                  <button
-                    onClick={() => {
-                      const variant = coyoteBagProduct.variants[0]
-                      onAddCoyoteBag({
-                        name: coyoteBagProduct.name,
-                        price: variant.price,
-                        size: variant.size,
-                        variantId: variant.id,
-                      })
-                    }}
-                    className='bg-amber-100 hover:bg-amber-50 hover:scale-[1.02] active:scale-[0.98] transition-all border-2 border-amber-700 text-amber-900 font-bold px-3 py-1 text-[10px] uppercase cursor-pointer'
-                  >
-                    add coyote bag
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Checkout Button - Footer */}

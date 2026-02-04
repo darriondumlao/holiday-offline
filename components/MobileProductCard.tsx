@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Product, ProductVariant } from '@/lib/shopify'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
+import LimitedDropTimer from './LimitedDropTimer'
 
 interface MobileProductCardProps {
   product: Product | null
@@ -20,6 +21,9 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
   const images = product.images.map(img => img.url)
   const allVariants = product.variants || []
   const price = product.variants[0]?.price || 0
+
+  // Check if product is sold out (no variants available for sale)
+  const isSoldOut = allVariants.length === 0 || allVariants.every(v => !v.availableForSale)
 
   const handleSizeSelect = (variant: ProductVariant) => {
     if (onAddToCart && variant.availableForSale) {
@@ -67,6 +71,12 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
           }
         }}
       >
+        {/* Sold Out Pill */}
+        <LimitedDropTimer
+          isActive={isSoldOut}
+          manualSoldOut={isSoldOut}
+          startedAt={null}
+        />
         {images.length > 0 ? (
           <Image
             src={images[0]}
@@ -106,39 +116,69 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
 
       {/* Footer - Add to Cart / Size Selector */}
       <div className='bg-blue-600 px-3 py-2 relative overflow-hidden rounded-b-sm'>
-        {/* Add to Cart Button */}
-        <button
-          onClick={() => setShowSizes(true)}
-          className={`w-full bg-white text-black font-bold py-2 text-sm rounded-sm transition-all duration-150 ${
-            showSizes ? 'opacity-0 scale-95 absolute inset-x-3' : 'opacity-100 scale-100'
-          }`}
-        >
-          add to cart
-        </button>
-
-        {/* Size Selector - no back button, tap image to dismiss */}
-        <div
-          className={`transition-all duration-150 ${
-            showSizes ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-x-3 pointer-events-none'
-          }`}
-        >
-          <div className='flex flex-wrap gap-1.5 justify-center'>
-            {allVariants.map((variant) => (
+        {/* Single variant with default title - add directly to cart */}
+        {allVariants.length === 1 && allVariants[0].size.toLowerCase() === 'default title' ? (
+          <div className='flex justify-center'>
+            <button
+              onClick={() => allVariants[0].availableForSale && handleSizeSelect(allVariants[0])}
+              disabled={!allVariants[0].availableForSale}
+              className={`font-bold px-4 py-1.5 text-xs rounded-sm transition-all duration-150 ${
+                allVariants[0].availableForSale
+                  ? 'bg-white text-black active:scale-95'
+                  : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              {allVariants[0].availableForSale ? 'add to cart' : 'sold out'}
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Add to Cart Button or Sold Out */}
+            {isSoldOut ? (
               <button
-                key={variant.id}
-                onClick={() => handleSizeSelect(variant)}
-                disabled={!variant.availableForSale}
-                className={`font-bold px-3 py-1.5 text-xs rounded-sm transition-all ${
-                  variant.availableForSale
-                    ? 'bg-white text-black active:scale-95'
-                    : 'bg-gray-500 text-gray-400 cursor-not-allowed'
+                disabled
+                className='w-full bg-gray-500 text-gray-300 font-bold py-2 text-sm rounded-sm cursor-not-allowed'
+              >
+                sold out
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowSizes(true)}
+                className={`w-full bg-white text-black font-bold py-2 text-sm rounded-sm transition-all duration-150 ${
+                  showSizes ? 'opacity-0 scale-95 absolute inset-x-3' : 'opacity-100 scale-100'
                 }`}
               >
-                {variant.size}
+                add to cart
               </button>
-            ))}
-          </div>
-        </div>
+            )}
+
+            {/* Size Selector - no back button, tap image to dismiss */}
+            {!isSoldOut && (
+              <div
+                className={`transition-all duration-150 ${
+                  showSizes ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-x-3 pointer-events-none'
+                }`}
+              >
+                <div className='flex flex-wrap gap-1.5 justify-center'>
+                  {allVariants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => handleSizeSelect(variant)}
+                      disabled={!variant.availableForSale}
+                      className={`font-bold px-3 py-1.5 text-xs rounded-sm transition-all ${
+                        variant.availableForSale
+                          ? 'bg-white text-black active:scale-95'
+                          : 'bg-gray-500 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {variant.size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
