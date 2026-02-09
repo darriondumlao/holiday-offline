@@ -42,7 +42,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
     // Fallback placeholder
     return (
       <div className='w-full select-none overflow-hidden bg-black rounded-sm'>
-        <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm'>
+        <div className='px-3 py-1.5 flex items-center justify-between rounded-t-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
           <h2 className='text-white font-bold text-xs lowercase'>shoe ($99)</h2>
           <button
             onClick={onClose}
@@ -57,7 +57,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
         <div className='h-[200px] bg-[#1a1a1a] flex items-center justify-center'>
           <span className='text-white text-2xl font-bold'>$99</span>
         </div>
-        <div className='bg-blue-600 px-3 py-2 rounded-b-sm'>
+        <div className='px-3 py-2 rounded-b-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
           <button
             onClick={() => window.open('https://holidaybrand.co', '_blank')}
             className='w-full bg-white text-black font-bold py-2 text-sm rounded-sm'
@@ -88,7 +88,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
   return (
     <div className='w-full select-none overflow-hidden bg-black rounded-sm'>
       {/* Header */}
-      <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between gap-2 rounded-t-sm'>
+      <div className='px-3 py-1.5 flex items-center justify-between gap-2 rounded-t-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         <h2 className='text-white font-bold text-[10px] lowercase truncate flex-1 min-w-0'>
           {product.name} (${price})
         </h2>
@@ -105,7 +105,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
 
       {/* Image Area - tap to dismiss size selector or open lightbox */}
       <div
-        className='relative h-[200px] bg-[#f5f5f5]'
+        className='relative h-[200px] bg-[#1a1a1a]'
         onClick={() => {
           if (showSizes) {
             setShowSizes(false)
@@ -123,7 +123,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
             sizes='280px'
           />
         ) : (
-          <div className='flex items-center justify-center h-full bg-[#1a1a1a]'>
+          <div className='flex items-center justify-center h-full'>
             <span className='text-white text-lg font-bold lowercase'>{product.name}</span>
           </div>
         )}
@@ -158,7 +158,7 @@ export default function MobileShoeCard({ product, onAddToCart, onClose }: Mobile
       )}
 
       {/* Footer */}
-      <div className='bg-blue-600 px-3 py-2 relative overflow-hidden rounded-b-sm'>
+      <div className='px-3 py-2 relative overflow-hidden rounded-b-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         {isSoldOut ? (
           <div className='w-full bg-gray-500 text-white font-bold py-2 text-sm rounded-sm text-center'>
             sold out

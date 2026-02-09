@@ -137,7 +137,7 @@ export default function LimitedDropTimer({ startedAt, isActive, manualSoldOut, o
   // If manual sold out is enabled, show sold out immediately
   if (manualSoldOut && isActive) {
     return (
-      <div className='absolute top-2 right-2 z-10 rounded-full px-3 py-1.5 font-bold text-sm shadow-lg bg-red-600 text-white animate-pulse'>
+      <div className='absolute top-2 right-2 z-10 rounded-full px-2 py-1 md:px-3 md:py-1.5 font-bold text-[10px] md:text-sm shadow-lg bg-red-600 text-white animate-pulse'>
         SOLD OUT
       </div>
     )
@@ -163,7 +163,7 @@ export default function LimitedDropTimer({ startedAt, isActive, manualSoldOut, o
   }
 
   return (
-    <div className={`absolute top-2 right-2 z-10 rounded-full px-3 py-1.5 font-bold text-sm shadow-lg ${getColorClasses()}`}>
+    <div className={`absolute top-2 right-2 z-10 rounded-full px-2 py-1 md:px-3 md:py-1.5 font-bold text-[10px] md:text-sm shadow-lg ${getColorClasses()}`}>
       {soldOut ? 'SOLD OUT' : displayValue}
     </div>
   )

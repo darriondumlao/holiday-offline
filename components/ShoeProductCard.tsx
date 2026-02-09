@@ -63,8 +63,8 @@ export default function ShoeProductCard({ title, onClose, onAddToCart, product }
   if (product) {
     return (
       <div className='w-full select-none'>
-        {/* Blue Header */}
-        <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm'>
+        {/* Header */}
+        <div className='px-3 py-1.5 flex items-center justify-between rounded-t-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
           <h2 className='text-white font-bold text-sm lowercase'>{product.name} (${product.variants[0]?.price || 0})</h2>
           <button
             onClick={onClose}
@@ -138,7 +138,7 @@ export default function ShoeProductCard({ title, onClose, onAddToCart, product }
         )}
 
         {/* Size Selector - horizontal scroll single row */}
-        <div className='bg-blue-600 px-2 py-2 rounded-b-sm'>
+        <div className='px-2 py-2 rounded-b-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
           <div
             className='flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 scroll-smooth'
             style={{
@@ -173,8 +173,8 @@ export default function ShoeProductCard({ title, onClose, onAddToCart, product }
   // Fallback: Original placeholder UI
   return (
     <div className='w-full select-none'>
-      {/* Blue Header */}
-      <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm'>
+      {/* Header */}
+      <div className='px-3 py-1.5 flex items-center justify-between rounded-t-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         <h2 className='text-white font-bold text-sm lowercase'>{title}</h2>
         <button
           onClick={onClose}
@@ -203,7 +203,7 @@ export default function ShoeProductCard({ title, onClose, onAddToCart, product }
       </div>
 
       {/* Button Row */}
-      <div className='bg-blue-600 px-2 py-2 flex items-center justify-center gap-2 rounded-b-sm'>
+      <div className='px-2 py-2 flex items-center justify-center gap-2 rounded-b-sm bg-cover bg-center' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         <button
           onClick={handleOffline}
           className='flex-1 bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 transition-all border-2 border-black text-black font-bold cursor-pointer px-3 py-2 text-xs'

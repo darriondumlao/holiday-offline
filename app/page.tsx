@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import BottomLeftModal from '@/components/BottomLeftModal'
 import OfflineModal from '@/components/OfflineModal'
@@ -13,10 +13,18 @@ import ProblemsModal from '@/components/ProblemsModal'
 import RamboModal from '@/components/RamboModal'
 import TopRightModal from '@/components/TopRightModal'
 import BouncingWrapper from '@/components/BouncingWrapper'
+import { BouncingPauseProvider } from '@/contexts/BouncingPauseContext'
 import CountdownTimer from '@/components/CountdownTimer'
 import ProductsView from '@/components/ProductsView'
+import VintageView from '@/components/VintageView'
 import TickerHeader from '@/components/TickerHeader'
-import CoyoteBagModal from '@/components/CoyoteBagModal'
+import CartModal, { CartItem } from '@/components/CartModal'
+import { createCheckoutClient } from '@/lib/shopify'
+
+// View modes for the 3-tab navigation
+export type ViewMode = 'offline' | 'shop' | 'vintage'
+
+const CART_STORAGE_KEY = 'holiday-cart'
 
 export default function Home() {
   const [answer, setAnswer] = useState('')
@@ -49,21 +57,90 @@ export default function Home() {
   const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showLeftSidebar, setShowLeftSidebar] = useState(false)
   const [showRightSidebar, setShowRightSidebar] = useState(false)
-  const [showProductsView, setShowProductsView] = useState(true) // Shop view shows first
-  const [showCoyoteBagModal, setShowCoyoteBagModal] = useState(false)
-  const addToCartRef = useRef<((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) | null>(null)
+  const [currentView, setCurrentView] = useState<ViewMode>('shop') // 3-tab navigation
+  const [showCartModal, setShowCartModal] = useState(false) // Cart modal for vintage view
+  const [modalsHidden, setModalsHidden] = useState(false) // Toggle to hide all bouncing modals
 
-  // Callback to receive addToCart function from ProductsView
-  const handleCartAddCallback = useCallback((addToCartFn: (product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void) => {
-    addToCartRef.current = addToCartFn
-  }, [])
+  // Cart state - lifted from ProductsView to persist across views
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
 
-  // Handler for adding coyote bag to cart
-  const handleAddCoyoteBagToCart = useCallback((product: { name: string; price: number; size: string; variantId: string }) => {
-    if (addToCartRef.current) {
-      addToCartRef.current(product)
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem(CART_STORAGE_KEY)
+    if (savedCart) {
+      try {
+        const parsed = JSON.parse(savedCart)
+        setCartItems(parsed)
+      } catch (e) {
+        console.error('Failed to parse cart from localStorage:', e)
+      }
     }
   }, [])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))
+  }, [cartItems])
+
+  // Cart functions
+  const addToCart = useCallback((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => {
+    const id = `${product.name}-${product.size || 'default'}-${Date.now()}`
+    const newItem: CartItem = {
+      id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      size: product.size,
+      image: product.image,
+      variantId: product.variantId,
+    }
+    setCartItems(prev => [...prev, newItem])
+  }, [])
+
+  const removeFromCart = useCallback((id: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== id))
+  }, [])
+
+  const updateQuantity = useCallback((id: string, quantity: number) => {
+    if (quantity < 1) {
+      removeFromCart(id)
+      return
+    }
+    setCartItems(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, quantity } : item
+      )
+    )
+  }, [removeFromCart])
+
+  const handleCheckout = useCallback(async () => {
+    const lineItems = cartItems
+      .filter(item => item.variantId)
+      .map(item => ({
+        variantId: item.variantId!,
+        quantity: item.quantity,
+      }))
+
+    if (lineItems.length === 0) {
+      window.location.href = 'https://holidaybrand.co'
+      return
+    }
+
+    try {
+      const checkout = await createCheckoutClient(lineItems)
+      window.location.href = checkout.webUrl
+    } catch (error) {
+      console.error('Error creating checkout:', error)
+      window.location.href = 'https://holidaybrand.co'
+    }
+  }, [cartItems])
+
+  // Handle bag icon click - open cart modal on vintage, do nothing on shop (cart is in grid)
+  const handleBagClick = useCallback(() => {
+    if (currentView === 'vintage') {
+      setShowCartModal(true)
+    }
+  }, [currentView])
 
   useEffect(() => {
     // Show logo as spotlight starts to shine
@@ -231,26 +308,49 @@ export default function Home() {
 
       {/* Countdown Timer with View Toggle - waits for spotlight */}
       <CountdownTimer
-        showProductsView={showProductsView}
-        onToggleView={setShowProductsView}
+        currentView={currentView}
+        onViewChange={setCurrentView}
         showAfterSpotlight={!showSpotlight}
-        onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
+        onBagClick={handleBagClick}
+        cartItemCount={cartItems.length}
+        modalsHidden={modalsHidden}
+        onToggleModals={() => setModalsHidden(!modalsHidden)}
       />
 
-      {/* Products View - Shows by default, waits for spotlight */}
+      {/* Products View (Shop) - Shows when currentView is 'shop' */}
       <ProductsView
-        isVisible={showProductsView}
+        isVisible={currentView === 'shop'}
         showAfterSpotlight={!showSpotlight}
-        onOpenCoyoteBag={() => setShowCoyoteBagModal(true)}
-        onCartAddCallback={handleCartAddCallback}
+        cartItems={cartItems}
+        onAddToCart={addToCart}
+        onRemoveFromCart={removeFromCart}
+        onUpdateQuantity={updateQuantity}
+        onCheckout={handleCheckout}
       />
 
-      {/* Coyote Bag Modal */}
-      <CoyoteBagModal
-        isOpen={showCoyoteBagModal}
-        onAddToCart={handleAddCoyoteBagToCart}
-        onClose={() => setShowCoyoteBagModal(false)}
+      {/* Vintage View - Shows when currentView is 'vintage' */}
+      <VintageView
+        isVisible={currentView === 'vintage'}
+        showAfterSpotlight={!showSpotlight}
+        cartItems={cartItems}
+        onAddToCart={addToCart}
       />
+
+      {/* Cart Modal - opens from bag icon on vintage view */}
+      {showCartModal && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
+            <CartModal
+              title="cart"
+              onClose={() => setShowCartModal(false)}
+              items={cartItems}
+              onUpdateQuantity={updateQuantity}
+              onRemoveItem={removeFromCart}
+              onCheckout={handleCheckout}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Spotlight Effect - Always visible regardless of view */}
       {showSpotlight && (
@@ -261,82 +361,92 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Home View - Shows when toggled */}
+      {/* Main Home View (Offline) - Shows when currentView is 'offline' */}
       <div
         className={`transition-opacity duration-500 ${
-          showProductsView ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+          currentView === 'offline' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        {/* Bouncing Modals - DVD-style animation with different directions to spread out */}
-        {showLeftSidebar && (
-          <>
-            {showDownloadModal && downloadModalData && (
-              <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title={downloadModalData.title}>
-                <BottomLeftModal
-                  title={downloadModalData.title}
-                  questionText={downloadModalData.questionText}
-                  imageUrl={downloadModalData.fileUrl}
-                  downloadFileName={downloadModalData.downloadFileName}
-                  fileExtension={downloadModalData.fileExtension}
-                  onClose={() => setShowDownloadModal(false)}
-                />
-              </BouncingWrapper>
-            )}
-            {/* {showCenterModal && (
-              <BouncingWrapper speed={1.8} initialDirection="ne" className="z-40" title="click the buttons">
-                <CenterModal
-                  title='click the buttons'
-                  onClose={() => setShowCenterModal(false)}
-                />
-              </BouncingWrapper>
-            )} */}
-            {showAnswersModal && (
-              <BouncingWrapper speed={1.3} initialDirection="sw" className="z-40" title="what would you miss tomorrow?">
-                <AnswersModal
-                  title='what would you miss tomorrow?'
-                  onClose={() => setShowAnswersModal(false)}
-                />
-              </BouncingWrapper>
-            )}
-            {showProblemsModal && (
-              <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title='what problem do you wish you could solve?'>
-                <ProblemsModal
-                  title='what problem do you wish you could solve?'
-                  onClose={() => setShowProblemsModal(false)}
-                />
-              </BouncingWrapper>
-            )}
-          </>
-        )}
+        {/* Bouncing Modals - Wrapped in provider for global pause coordination */}
+        <BouncingPauseProvider>
+          {/* Bouncing Modals Container - Hidden when modalsHidden is true */}
+          <div
+            className={`transition-opacity duration-300 ${
+              modalsHidden ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+            }`}
+          >
+          {/* Bouncing Modals - DVD-style animation with different directions to spread out */}
+          {showLeftSidebar && (
+            <>
+              {showDownloadModal && downloadModalData && (
+                <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title={downloadModalData.title}>
+                  <BottomLeftModal
+                    title={downloadModalData.title}
+                    questionText={downloadModalData.questionText}
+                    imageUrl={downloadModalData.fileUrl}
+                    downloadFileName={downloadModalData.downloadFileName}
+                    fileExtension={downloadModalData.fileExtension}
+                    onClose={() => setShowDownloadModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+              {/* {showCenterModal && (
+                <BouncingWrapper speed={1.8} initialDirection="ne" className="z-40" title="click the buttons">
+                  <CenterModal
+                    title='click the buttons'
+                    onClose={() => setShowCenterModal(false)}
+                  />
+                </BouncingWrapper>
+              )} */}
+              {showAnswersModal && (
+                <BouncingWrapper speed={1.3} initialDirection="sw" className="z-40" title="what would you miss tomorrow?">
+                  <AnswersModal
+                    title='what would you miss tomorrow?'
+                    onClose={() => setShowAnswersModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+              {showProblemsModal && (
+                <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title='what problem do you wish you could solve?'>
+                  <ProblemsModal
+                    title='what problem do you wish you could solve?'
+                    onClose={() => setShowProblemsModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+            </>
+          )}
 
-        {showRightSidebar && (
-          <>
-            {showTopRightModal && (
-              <BouncingWrapper speed={1.6} initialDirection="nw" className="z-40" title="january 29th">
-                <TopRightModal
-                  title='january 29th'
-                  onClose={() => setShowTopRightModal(false)}
-                />
-              </BouncingWrapper>
-            )}
-            {showSlideshowModal && (
-              <BouncingWrapper speed={1.4} initialDirection="sw" className="z-40" title="what kept me alive">
-                <ImageSlideshowModal
-                  title='what kept me alive'
-                  onClose={() => setShowSlideshowModal(false)}
-                />
-              </BouncingWrapper>
-            )}
-            {showRamboModal && (
-              <BouncingWrapper speed={2} initialDirection="ne" className="z-40" title="rambo ($99)">
-                <RamboModal
-                  title='january 29th limited to 99 pairs ($99)'
-                  onClose={() => setShowRamboModal(false)}
-                />
-              </BouncingWrapper>
-            )}
-          </>
-        )}
+          {showRightSidebar && (
+            <>
+              {showTopRightModal && (
+                <BouncingWrapper speed={1.6} initialDirection="nw" className="z-40" title="january 29th">
+                  <TopRightModal
+                    title='january 29th'
+                    onClose={() => setShowTopRightModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+              {showSlideshowModal && (
+                <BouncingWrapper speed={1.4} initialDirection="sw" className="z-40" title="what kept me alive">
+                  <ImageSlideshowModal
+                    title='what kept me alive'
+                    onClose={() => setShowSlideshowModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+              {showRamboModal && (
+                <BouncingWrapper speed={2} initialDirection="ne" className="z-40" title="rambo ($99)">
+                  <RamboModal
+                    title='january 29th limited to 99 pairs ($99)'
+                    onClose={() => setShowRamboModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+            </>
+          )}
+          </div>
+        </BouncingPauseProvider>
 
 
       {/* Main Content Wrapper - Fixed center, not affected by sidebars */}

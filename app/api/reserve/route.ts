@@ -8,8 +8,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and phone are required' }, { status: 400 });
     }
 
+    if (!timeSlot || !reservationDate) {
+      return NextResponse.json({ error: 'Time slot and date are required' }, { status: 400 });
+    }
+
     const klaviyoApiKey = process.env.KLAVIYO_PRIVATE_API_KEY;
-    const listId = process.env.KLAVIYO_LIST_ID;
+    const listId = process.env.KLAVIYO_RESERVATION_LIST_ID;
 
     if (!klaviyoApiKey || !listId) {
       return NextResponse.json({ error: 'Klaviyo configuration missing' }, { status: 500 });
@@ -21,7 +25,7 @@ export async function POST(request: Request) {
       formattedPhone = '+1' + formattedPhone; // Assume US number
     }
 
-    // Check if email already exists in the list
+    // Check if email already exists in the reservation list
     const checkResponse = await fetch(
       `https://a.klaviyo.com/api/profiles/?filter=equals(email,"${email}")`,
       {
@@ -36,11 +40,11 @@ export async function POST(request: Request) {
 
     const checkData = await checkResponse.json();
 
-    // If profile exists, check if they're already in the list
+    // If profile exists, check if they're already in the reservation list
     if (checkData.data && checkData.data.length > 0) {
       const profileId = checkData.data[0].id;
 
-      // Check if profile is already in the list
+      // Check if profile is already in the reservation list
       const listCheckResponse = await fetch(
         `https://a.klaviyo.com/api/lists/${listId}/relationships/profiles/`,
         {
@@ -57,11 +61,11 @@ export async function POST(request: Request) {
       const isInList = listCheckData.data?.some((profile: any) => profile.id === profileId);
 
       if (isInList) {
-        return NextResponse.json({ alreadySubscribed: true }, { status: 200 });
+        return NextResponse.json({ alreadyReserved: true }, { status: 200 });
       }
     }
 
-    // Create or update profile and subscribe to list
+    // Create or update profile and add to reservation list
     const subscribeResponse = await fetch(
       `https://a.klaviyo.com/api/profile-subscription-bulk-create-jobs/`,
       {
@@ -75,6 +79,7 @@ export async function POST(request: Request) {
           data: {
             type: 'profile-subscription-bulk-create-job',
             attributes: {
+              custom_source: 'Valentines Day 2025 Reservation',
               profiles: {
                 data: [
                   {
@@ -82,12 +87,6 @@ export async function POST(request: Request) {
                     attributes: {
                       email: email,
                       phone_number: formattedPhone,
-                      // Custom properties for reservation
-                      properties: {
-                        ...(timeSlot && { reservation_time: timeSlot }),
-                        ...(reservationDate && { reservation_date: reservationDate }),
-                        reservation_source: 'holiday_website'
-                      },
                       subscriptions: {
                         email: {
                           marketing: {
@@ -118,12 +117,63 @@ export async function POST(request: Request) {
       }
     );
 
+    // If subscription succeeded, update the profile with custom properties
+    if (subscribeResponse.ok) {
+      // Get the profile ID
+      const profileResponse = await fetch(
+        `https://a.klaviyo.com/api/profiles/?filter=equals(email,"${email}")`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Klaviyo-API-Key ${klaviyoApiKey}`,
+            'revision': '2024-10-15',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const profileData = await profileResponse.json();
+      if (profileData.data && profileData.data.length > 0) {
+        const profileId = profileData.data[0].id;
+
+        // Update profile with custom properties
+        await fetch(
+          `https://a.klaviyo.com/api/profiles/${profileId}/`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Klaviyo-API-Key ${klaviyoApiKey}`,
+              'revision': '2024-10-15',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              data: {
+                type: 'profile',
+                id: profileId,
+                attributes: {
+                  properties: {
+                    reservation_time: timeSlot,
+                    reservation_date: reservationDate,
+                    reservation_source: 'valentines_day_2025',
+                    reservation_event: "Valentine's Day Dinner"
+                  }
+                }
+              }
+            }),
+          }
+        );
+      }
+    }
+
     if (!subscribeResponse.ok) {
-      return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
+      const errorData = await subscribeResponse.json().catch(() => ({}));
+      console.error('Klaviyo subscribe error:', subscribeResponse.status, errorData);
+      return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
+  } catch (error) {
+    console.error('Reserve API error:', error);
+    return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
   }
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { useRef, useEffect } from 'react'
+
 export interface CartItem {
   id: string
   name: string
@@ -29,6 +31,21 @@ export default function CartModal({
   onCheckout,
   isMobileEmbedded = false
 }: CartModalProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (cardRef.current) {
+      console.log(`[CartModal]`)
+      console.log(`  Total height: ${cardRef.current.offsetHeight}px`)
+      console.log(`  Header: ${headerRef.current?.offsetHeight}px`)
+      console.log(`  Content: ${contentRef.current?.offsetHeight}px`)
+      console.log(`  Footer: ${footerRef.current?.offsetHeight}px`)
+    }
+  }, [])
+
   const handleCheckout = () => {
     if (onCheckout) {
       onCheckout()
@@ -43,39 +60,50 @@ export default function CartModal({
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   return (
-    <div className={`w-full select-none ${isMobileEmbedded ? 'rounded-sm overflow-hidden' : ''}`}>
-      {/* Header */}
-      <div className={`${isMobileEmbedded ? 'bg-green-600' : 'bg-blue-600'} px-3 py-1.5 flex items-center justify-between rounded-t-sm`}>
-        <h2 className={`text-white font-bold lowercase ${isMobileEmbedded ? 'text-[10px]' : 'text-sm'}`}>
-          {title}
-          {totalItems > 0 && (
-            <span className='ml-1.5 font-normal'>
-              ({totalItems}) - ${subtotal.toFixed(2)}
-            </span>
-          )}
-        </h2>
-        <button
-          onClick={onClose}
-          className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
-          aria-label='Close'
-        >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 24 24'
-            fill='white'
-            className='w-3.5 h-3.5'
+    <div ref={cardRef} className={`w-full select-none ${isMobileEmbedded ? 'overflow-hidden bg-black rounded-sm' : ''}`}>
+      {/* Header - matches ProductCard header */}
+      <div
+        ref={headerRef}
+        className='relative rounded-t-sm bg-cover bg-center overflow-hidden'
+        style={{ backgroundImage: 'url(/swingers-1.png)' }}
+      >
+        {/* Dark overlay to dim the pattern */}
+        <div className='absolute inset-0 bg-black/40' />
+        <div className='relative px-3 py-1.5 flex items-center justify-between gap-2'>
+          <h2
+            className={`text-white font-bold lowercase truncate flex-1 ${isMobileEmbedded ? 'text-[10px]' : 'text-sm'}`}
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
           >
-            <path
-              fillRule='evenodd'
-              d='M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z'
-              clipRule='evenodd'
-            />
-          </svg>
-        </button>
+            {title}
+            {totalItems > 0 && (
+              <span className='ml-1.5 font-normal'>
+                ({totalItems}) - ${subtotal.toFixed(2)}
+              </span>
+            )}
+          </h2>
+          <button
+            onClick={onClose}
+            className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
+            aria-label='Close'
+          >
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              viewBox='0 0 24 24'
+              fill='white'
+              className='w-3.5 h-3.5'
+            >
+              <path
+                fillRule='evenodd'
+                d='M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z'
+                clipRule='evenodd'
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Content Area - Fixed height to match other modals */}
-      <div className='bg-white h-[216px] flex flex-col'>
+      {/* Content Area - Mobile: matches MobileProductCard (200px image + 24px see details = 224px), Desktop: 248px */}
+      <div ref={contentRef} className='h-[224px] md:h-[248px] flex flex-col bg-white'>
         {/* Cart Items - Scrollable area */}
         <div className='flex-1 px-4 py-2 overflow-y-auto scrollbar-hide'>
           {items.length === 0 ? (
@@ -154,22 +182,24 @@ export default function CartModal({
             </div>
           )}
         </div>
-
       </div>
 
-      {/* Checkout Button - Footer */}
-      <div className='bg-green-500 px-2 py-2 flex items-center justify-center gap-2 rounded-b-sm'>
-        <button
-          onClick={handleCheckout}
-          disabled={items.length === 0}
-          className={`flex-1 bg-gray-200 border-2 border-black text-black font-bold px-3 py-2 text-xs uppercase transition-all ${
-            items.length > 0
-              ? 'hover:bg-white hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
-              : 'opacity-50 cursor-not-allowed'
-          }`}
-        >
-          checkout
-        </button>
+      {/* Footer - matches ProductCard footer with checkout button */}
+      <div ref={footerRef} className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
+        {/* Dark overlay to dim the pattern */}
+        <div className='absolute inset-0 bg-black/40' />
+        <div className='relative px-2 py-2 flex justify-center'>
+          <button
+            onClick={handleCheckout}
+            disabled={items.length === 0}
+            className={`text-white font-bold text-xs tracking-wide ${
+              items.length > 0 ? 'hover:underline cursor-pointer' : 'opacity-50 cursor-not-allowed'
+            }`}
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+          >
+            Checkout →
+          </button>
+        </div>
       </div>
     </div>
   )

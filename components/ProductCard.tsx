@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import ModalWrapper from './ModalWrapper'
 import ImageScroller from './ImageScroller'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
@@ -26,6 +26,22 @@ export default function ProductCard({
 }: ProductCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const detailsRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (product && cardRef.current) {
+      console.log(`[ProductCard: ${product.name}]`)
+      console.log(`  Total height: ${cardRef.current.offsetHeight}px`)
+      console.log(`  Header: ${headerRef.current?.offsetHeight}px`)
+      console.log(`  Content: ${contentRef.current?.offsetHeight}px`)
+      console.log(`  Details row: ${detailsRef.current?.offsetHeight}px`)
+      console.log(`  Footer: ${footerRef.current?.offsetHeight}px`)
+    }
+  }, [product])
 
   const handleOffline = () => {
     window.open('https://holidaybrand.co', '_blank', 'noopener,noreferrer')
@@ -53,10 +69,18 @@ export default function ProductCard({
   // If we have product data, show the product with images (or title fallback) and size selector
   if (product) {
     return (
-      <div className='w-full select-none'>
-        {/* Blue Header */}
-        <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm'>
-          <h2 className='text-white font-bold text-sm lowercase'>{product.name} (${product.variants[0]?.price || 0})</h2>
+      <div ref={cardRef} className='w-full select-none'>
+        {/* Header */}
+        <div ref={headerRef} className='relative rounded-t-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
+          {/* Dark overlay to dim the pattern */}
+          <div className='absolute inset-0 bg-black/40' />
+          <div className='relative px-3 py-1.5 flex items-center justify-between gap-2'>
+            <h2
+              className='text-white font-bold text-sm lowercase truncate flex-1'
+              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+            >
+              {product.name} (${product.variants[0]?.price || 0})
+            </h2>
           <button
             onClick={onClose}
             className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
@@ -75,16 +99,17 @@ export default function ProductCard({
               />
             </svg>
           </button>
+          </div>
         </div>
 
         {/* Content Area - Image Scroller or Title Fallback */}
-        <div className='h-[120px] md:h-[216px] relative'>
-          {/* Sold Out Pill */}
-          <LimitedDropTimer
+        <div ref={contentRef} className='h-[120px] md:h-[216px] relative'>
+          {/* Sold Out Pill - Temporarily hidden for pre-launch */}
+          {/* <LimitedDropTimer
             isActive={isSoldOut}
             manualSoldOut={isSoldOut}
             startedAt={null}
-          />
+          /> */}
           {images.length > 0 ? (
             <ImageScroller
               images={images}
@@ -113,59 +138,38 @@ export default function ProductCard({
           />
         )}
 
-        {/* See Details Link - centered below image */}
-        {images.length > 0 && (
-          <div className='bg-[#1a1a1a] py-1'>
-            <button
-              onClick={() => {
+        {/* See Details Link - always shown to maintain consistent height */}
+        <div ref={detailsRef} className='bg-[#1a1a1a] py-1'>
+          <button
+            onClick={() => {
+              if (images.length > 0) {
                 setLightboxIndex(0)
                 setLightboxOpen(true)
-              }}
-              className='text-white/50 hover:text-white/80 text-[10px] tracking-wide w-full text-center transition-colors'
-            >
-              see details
-            </button>
-          </div>
-        )}
+              }
+            }}
+            disabled={images.length === 0}
+            className={`text-[10px] tracking-wide w-full text-center transition-colors ${
+              images.length > 0
+                ? 'text-white/50 hover:text-white/80 cursor-pointer'
+                : 'text-transparent cursor-default'
+            }`}
+          >
+            see details
+          </button>
+        </div>
 
-        {/* Size Selector or Add to Cart button */}
-        <div className='bg-blue-600 px-2 py-2 rounded-b-sm'>
-          {/* Single variant with default title - show Add to Cart button */}
-          {allVariants.length === 1 && allVariants[0].size.toLowerCase() === 'default title' ? (
-            <div className='flex justify-center'>
-              <button
-                onClick={() => allVariants[0].availableForSale && handleSizeSelect(allVariants[0])}
-                disabled={!allVariants[0].availableForSale}
-                className={`border-2 border-black font-bold px-3 py-1 text-xs transition-all ${
-                  allVariants[0].availableForSale
-                    ? 'bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 text-black cursor-pointer'
-                    : 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                }`}
-              >
-                {allVariants[0].availableForSale ? 'add to cart' : 'sold out'}
-              </button>
-            </div>
-          ) : (
-            <div className='flex flex-wrap gap-1 justify-center'>
-              {allVariants.map((variant) => (
-                <button
-                  key={variant.id}
-                  onClick={() => variant.availableForSale && handleSizeSelect(variant)}
-                  disabled={!variant.availableForSale}
-                  className={`border-2 border-black font-bold px-2 py-1 text-xs transition-all ${
-                    variant.availableForSale
-                      ? 'bg-gray-200 hover:bg-white hover:scale-105 active:scale-95 text-black cursor-pointer'
-                      : 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  {variant.size}
-                </button>
-              ))}
-              {allVariants.length === 0 && (
-                <span className='text-white text-xs'>sold out</span>
-              )}
-            </div>
-          )}
+        {/* Size Selector - Temporarily showing "Available 2/14 @ 11AM" */}
+        <div ref={footerRef} className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
+          {/* Dark overlay to dim the pattern */}
+          <div className='absolute inset-0 bg-black/40' />
+          <div className='relative px-2 py-2 flex justify-center'>
+            <span
+              className='text-white font-bold text-xs tracking-wide'
+              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+            >
+              Available 2/14 @ 11AM
+            </span>
+          </div>
         </div>
       </div>
     )
