@@ -26,11 +26,34 @@ export default function ProductCard({
 }: ProductCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [isBellPlaying, setIsBellPlaying] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const footerRef = useRef<HTMLDivElement>(null)
+  const bellAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  const playBellSound = () => {
+    if (isBellPlaying) return
+
+    // Pause the main music
+    window.dispatchEvent(new CustomEvent('pauseForBell'))
+
+    setIsBellPlaying(true)
+
+    // Create and play the bell sound
+    const audio = new Audio('/swingers-bell.mp3')
+    bellAudioRef.current = audio
+
+    audio.play().catch(console.error)
+
+    // When the bell sound ends, resume music and re-enable button
+    audio.onended = () => {
+      setIsBellPlaying(false)
+      window.dispatchEvent(new CustomEvent('resumeAfterBell'))
+    }
+  }
 
   useEffect(() => {
     if (product && cardRef.current) {
@@ -79,7 +102,7 @@ export default function ProductCard({
               className='text-white font-bold text-sm lowercase truncate flex-1'
               style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
             >
-              {product.name} (${product.variants[0]?.price || 0})
+              {product.name} {/* (${product.variants[0]?.price || 0}) */}
             </h2>
           <button
             onClick={onClose}
@@ -163,12 +186,16 @@ export default function ProductCard({
           {/* Dark overlay to dim the pattern */}
           <div className='absolute inset-0 bg-black/40' />
           <div className='relative px-2 py-2 flex justify-center'>
-            <span
-              className='text-white font-bold text-xs tracking-wide'
+            <button
+              className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
+                isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95 hover:bg-black/60'
+              }`}
               style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+              onClick={playBellSound}
+              disabled={isBellPlaying}
             >
               Available 2/14 @ 11AM
-            </span>
+            </button>
           </div>
         </div>
       </div>

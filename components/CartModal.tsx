@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 export interface CartItem {
   id: string
@@ -35,6 +35,29 @@ export default function CartModal({
   const headerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const footerRef = useRef<HTMLDivElement>(null)
+  const bellAudioRef = useRef<HTMLAudioElement | null>(null)
+  const [isBellPlaying, setIsBellPlaying] = useState(false)
+
+  const playBellSound = () => {
+    if (isBellPlaying) return
+
+    // Pause the main music
+    window.dispatchEvent(new CustomEvent('pauseForBell'))
+
+    setIsBellPlaying(true)
+
+    // Create and play the bell sound
+    const audio = new Audio('/swingers-bell.mp3')
+    bellAudioRef.current = audio
+
+    audio.play().catch(console.error)
+
+    // When the bell sound ends, resume music and re-enable button
+    audio.onended = () => {
+      setIsBellPlaying(false)
+      window.dispatchEvent(new CustomEvent('resumeAfterBell'))
+    }
+  }
 
   useEffect(() => {
     if (cardRef.current) {
@@ -71,7 +94,7 @@ export default function CartModal({
         <div className='absolute inset-0 bg-black/40' />
         <div className='relative px-3 py-1.5 flex items-center justify-between gap-2'>
           <h2
-            className={`text-white font-bold lowercase truncate flex-1 ${isMobileEmbedded ? 'text-[10px]' : 'text-sm'}`}
+            className={`text-white font-bold lowercase truncate flex-1 text-sm`}
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
           >
             {title}
@@ -102,8 +125,8 @@ export default function CartModal({
         </div>
       </div>
 
-      {/* Content Area - Mobile: matches MobileProductCard (200px image + 24px see details = 224px), Desktop: 248px */}
-      <div ref={contentRef} className='h-[224px] md:h-[248px] flex flex-col bg-white'>
+      {/* Content Area - Mobile: matches MobileProductCard (260px image + 24px see details = 284px), Desktop: 248px */}
+      <div ref={contentRef} className='h-[284px] md:h-[248px] flex flex-col bg-white'>
         {/* Cart Items - Scrollable area */}
         <div className='flex-1 px-4 py-2 overflow-y-auto scrollbar-hide'>
           {items.length === 0 ? (
@@ -190,14 +213,14 @@ export default function CartModal({
         <div className='absolute inset-0 bg-black/40' />
         <div className='relative px-2 py-2 flex justify-center'>
           <button
-            onClick={handleCheckout}
-            disabled={items.length === 0}
-            className={`text-white font-bold text-xs tracking-wide ${
-              items.length > 0 ? 'hover:underline cursor-pointer' : 'opacity-50 cursor-not-allowed'
+            onClick={playBellSound}
+            disabled={isBellPlaying}
+            className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
+              isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95 hover:bg-black/60'
             }`}
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
           >
-            Checkout →
+            Checkout
           </button>
         </div>
       </div>

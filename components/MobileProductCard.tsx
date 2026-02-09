@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
+import { useState, useRef } from 'react'
 import { Product } from '@/lib/shopify'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
+import ImageScroller from './ImageScroller'
 
 interface MobileProductCardProps {
   product: Product | null
@@ -13,6 +13,29 @@ interface MobileProductCardProps {
 
 export default function MobileProductCard({ product, onAddToCart, onClose }: MobileProductCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [isBellPlaying, setIsBellPlaying] = useState(false)
+  const bellAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  const playBellSound = () => {
+    if (isBellPlaying) return
+
+    // Pause the main music
+    window.dispatchEvent(new CustomEvent('pauseForBell'))
+
+    setIsBellPlaying(true)
+
+    // Create and play the bell sound
+    const audio = new Audio('/swingers-bell.mp3')
+    bellAudioRef.current = audio
+
+    audio.play().catch(console.error)
+
+    // When the bell sound ends, resume music and re-enable button
+    audio.onended = () => {
+      setIsBellPlaying(false)
+      window.dispatchEvent(new CustomEvent('resumeAfterBell'))
+    }
+  }
 
   if (!product) return null
 
@@ -27,10 +50,10 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
         <div className='absolute inset-0 bg-black/40' />
         <div className='relative px-3 py-1.5 flex items-center justify-between gap-2'>
           <h2
-            className='text-white font-bold text-[10px] lowercase truncate flex-1 min-w-0'
+            className='text-white font-bold text-sm lowercase truncate flex-1 min-w-0'
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
           >
-            {product.name} (${price})
+            {product.name} {/* (${price}) */}
           </h2>
           <button
             onClick={onClose}
@@ -48,22 +71,13 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
         </div>
       </div>
 
-      {/* Image Area - tap to open lightbox */}
-      <div
-        className='relative h-[200px] bg-[#1a1a1a]'
-        onClick={() => {
-          if (images.length > 0) {
-            setLightboxOpen(true)
-          }
-        }}
-      >
+      {/* Image Area - with arrows to scroll through images */}
+      <div className='relative h-[260px] bg-[#1a1a1a]'>
         {images.length > 0 ? (
-          <Image
-            src={images[0]}
+          <ImageScroller
+            images={images}
             alt={product.name}
-            fill
-            className='object-contain p-2'
-            sizes='280px'
+            onImageClick={() => setLightboxOpen(true)}
           />
         ) : (
           <div className='flex items-center justify-center h-full'>
@@ -99,12 +113,16 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
         {/* Dark overlay to dim the pattern */}
         <div className='absolute inset-0 bg-black/40' />
         <div className='relative px-2 py-2 flex justify-center'>
-          <span
-            className='text-white font-bold text-xs tracking-wide'
+          <button
+            className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
+              isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95'
+            }`}
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+            onClick={playBellSound}
+            disabled={isBellPlaying}
           >
             Available 2/14 @ 11AM
-          </span>
+          </button>
         </div>
       </div>
     </div>

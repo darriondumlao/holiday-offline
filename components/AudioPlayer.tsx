@@ -47,6 +47,33 @@ const AudioPlayer = forwardRef<AudioPlayerHandle>(function AudioPlayer(_, ref) {
     isCurrentlyPlaying: () => isPlaying,
   }))
 
+  // Listen for global pause/resume events from bell sound
+  useEffect(() => {
+    const handlePauseForBell = () => {
+      if (audioRef.current && isPlaying) {
+        setWasPlayingBeforeMute(true)
+        audioRef.current.pause()
+        setIsPlaying(false)
+      }
+    }
+
+    const handleResumeAfterBell = () => {
+      if (audioRef.current && wasPlayingBeforeMute) {
+        audioRef.current.play().catch(console.error)
+        setIsPlaying(true)
+        setWasPlayingBeforeMute(false)
+      }
+    }
+
+    window.addEventListener('pauseForBell', handlePauseForBell)
+    window.addEventListener('resumeAfterBell', handleResumeAfterBell)
+
+    return () => {
+      window.removeEventListener('pauseForBell', handlePauseForBell)
+      window.removeEventListener('resumeAfterBell', handleResumeAfterBell)
+    }
+  }, [isPlaying, wasPlayingBeforeMute])
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = 0.3

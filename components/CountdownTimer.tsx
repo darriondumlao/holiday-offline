@@ -137,7 +137,21 @@ function ReservationModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <>
-            <h2 className="text-rose-300 text-xl font-bold text-center mb-4">Valentine&apos;s Day Reservation</h2>
+            <h2 className="text-rose-300 text-xl font-bold text-center mb-3">Valentine&apos;s Day Reservation</h2>
+
+            {/* Location */}
+            <div className="text-center mb-4">
+              <p className="text-rose-200/70 text-xs mb-1">Location</p>
+              <a
+                href="https://maps.apple.com/?address=8020%20Beverly%20Blvd,%20Los%20Angeles,%20CA%2090048&ll=34.0762,-118.3647&q=Swingers%20Hollywood"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white text-sm hover:text-rose-300 transition-colors underline underline-offset-2"
+              >
+                Swingers Hollywood
+              </a>
+              <p className="text-gray-400 text-xs mt-0.5">8020 Beverly Blvd, Los Angeles, CA 90048</p>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -368,13 +382,13 @@ export default function CountdownTimer({ currentView = 'shop', onViewChange, sho
         )}
         {/* Center: Valentine's content - two rows */}
         <div className="flex flex-col items-center flex-1 mx-1">
-          <div className="flex items-center justify-center gap-1 text-white text-[9px]">
+          <div className="flex items-center justify-center gap-1.5 text-white text-xs">
             <span className="tracking-wide whitespace-nowrap">Valentine&apos;s Day Reservations</span>
             <button
               onClick={() => setShowReservationModal(true)}
-              className="bg-gradient-to-r from-pink-500 to-pink-600 active:scale-95 text-white font-bold px-1.5 py-0.5 text-[7px] rounded transition-all whitespace-nowrap"
+              className="bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 active:scale-95 text-white font-bold px-2 py-1 text-[9px] rounded transition-all whitespace-nowrap"
             >
-              RESERVE
+              RESERVE NOW
             </button>
           </div>
           <p className="text-rose-200/50 text-[6px] text-center italic">

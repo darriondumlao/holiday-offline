@@ -171,7 +171,7 @@ export default function ProductsView({
         {/* Mobile Layout - Single column, centered, clean scroll */}
         <div className='md:hidden w-full h-full overflow-y-auto overscroll-y-contain scrollbar-hide'>
           <div
-            className={`flex flex-col gap-3 w-full max-w-[280px] mx-auto px-3 pb-20 pt-1 transition-all duration-700 ease-out ${
+            className={`flex flex-col gap-3 w-full max-w-[360px] mx-auto px-4 pb-20 pt-1 transition-all duration-700 ease-out ${
               topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
             }`}
           >
