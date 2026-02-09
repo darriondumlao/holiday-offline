@@ -7,9 +7,10 @@ interface ImageScrollerProps {
   alt?: string
   className?: string
   onImageClick?: (index: number) => void
+  scale?: number
 }
 
-export default function ImageScroller({ images, alt = 'Product image', className = '', onImageClick }: ImageScrollerProps) {
+export default function ImageScroller({ images, alt = 'Product image', className = '', onImageClick, scale = 1.1 }: ImageScrollerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -64,13 +65,14 @@ export default function ImageScroller({ images, alt = 'Product image', className
         {images.map((src, index) => (
           <div
             key={index}
-            className='flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-[#1a1a1a]'
+            className='flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-[#1a1a1a] overflow-hidden'
             onClick={() => onImageClick?.(index)}
           >
             <img
               src={src}
               alt={`${alt} ${index + 1}`}
               className='max-w-full max-h-full object-contain'
+              style={{ transform: `scale(${scale})` }}
             />
           </div>
         ))}

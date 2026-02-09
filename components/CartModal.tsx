@@ -125,8 +125,8 @@ export default function CartModal({
         </div>
       </div>
 
-      {/* Content Area - Mobile: matches MobileProductCard (260px image + 24px see details = 284px), Desktop: 248px */}
-      <div ref={contentRef} className='h-[284px] md:h-[248px] flex flex-col bg-white'>
+      {/* Content Area - Mobile: matches MobileProductCard (280px image + 24px see details = 304px), Desktop: 248px */}
+      <div ref={contentRef} className='h-[304px] md:h-[248px] flex flex-col bg-white'>
         {/* Cart Items - Scrollable area */}
         <div className='flex-1 px-4 py-2 overflow-y-auto scrollbar-hide'>
           {items.length === 0 ? (

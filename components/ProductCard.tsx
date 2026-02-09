@@ -142,6 +142,7 @@ export default function ProductCard({
                 setLightboxIndex(index)
                 setLightboxOpen(true)
               }}
+              scale={product.name.toLowerCase().includes('hldy zip') ? 1.2 : 1.1}
             />
           ) : (
             <div className='flex flex-col items-center justify-center text-center w-full h-full bg-[#1a1a1a]'>

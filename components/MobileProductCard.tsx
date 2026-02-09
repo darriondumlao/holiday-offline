@@ -72,12 +72,13 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
       </div>
 
       {/* Image Area - with arrows to scroll through images */}
-      <div className='relative h-[260px] bg-[#1a1a1a]'>
+      <div className='relative h-[280px] bg-[#1a1a1a]'>
         {images.length > 0 ? (
           <ImageScroller
             images={images}
             alt={product.name}
             onImageClick={() => setLightboxOpen(true)}
+            scale={product.name.toLowerCase().includes('hldy zip') ? 1.2 : 1.1}
           />
         ) : (
           <div className='flex items-center justify-center h-full'>
