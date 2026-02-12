@@ -79,7 +79,7 @@ export default function PreSwingersProductCard({
             className='text-white font-bold text-sm lowercase truncate flex-1'
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
           >
-            {product.name} {/* (${product.variants[0]?.price || 0}) */}
+            {product.name} (${product.variants[0]?.price || 0})
           </h2>
           <button
             onClick={onClose}

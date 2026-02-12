@@ -287,6 +287,7 @@ export async function fetchProductsByCollection(collectionHandle: string): Promi
                       currencyCode
                     }
                     availableForSale
+                    quantityAvailable
                   }
                 }
               }
