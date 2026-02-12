@@ -4,14 +4,17 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import ProductCard from './ProductCard'
 import MobileProductCard from './MobileProductCard'
+import PreSwingersProductCard from './PreSwingersProductCard'
+import PreSwingersMobileProductCard from './PreSwingersMobileProductCard'
 import CartModal, { CartItem } from './CartModal'
 import { useSwingersCollection } from '@/hooks/useSwingersCollection'
+import { usePreSwingersCollection } from '@/hooks/usePreSwingersCollection'
 
 interface ProductsViewProps {
   isVisible: boolean
   showAfterSpotlight?: boolean
   cartItems: CartItem[]
-  onAddToCart: (product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => void
+  onAddToCart: (product: { name: string; price: number; size?: string; image?: string; variantId?: string; quantityAvailable?: number }) => void
   onRemoveFromCart: (id: string) => void
   onUpdateQuantity: (id: string, quantity: number) => void
   onCheckout: () => void
@@ -26,11 +29,13 @@ export default function ProductsView({
   onUpdateQuantity,
   onCheckout
 }: ProductsViewProps) {
-  // Fetch products from Shopify "swingers" collection
-  const { products: swingersProducts, loading: productsLoading } = useSwingersCollection()
+  // Fetch products from Shopify collections
+  const { products: swingersProducts, loading: swingersLoading } = useSwingersCollection()
+  const { products: preSwingersProducts, loading: preSwingersLoading } = usePreSwingersCollection()
 
   // Track which cards are revealed (showing heart logo)
-  const [revealedCards, setRevealedCards] = useState<Record<number, boolean>>({})
+  // Using string keys like 'swingers-0', 'preswingers-0' to differentiate collections
+  const [revealedCards, setRevealedCards] = useState<Record<string, boolean>>({})
 
   const [topRowVisible, setTopRowVisible] = useState(false)
   const [bottomRowVisible, setBottomRowVisible] = useState(false)
@@ -56,12 +61,12 @@ export default function ProductsView({
     }
   }, [showAfterSpotlight, isVisible])
 
-  const revealCard = (index: number) => {
-    setRevealedCards(prev => ({ ...prev, [index]: true }))
+  const revealCard = (key: string) => {
+    setRevealedCards(prev => ({ ...prev, [key]: true }))
   }
 
-  const hideCard = (index: number) => {
-    setRevealedCards(prev => ({ ...prev, [index]: false }))
+  const hideCard = (key: string) => {
+    setRevealedCards(prev => ({ ...prev, [key]: false }))
   }
 
   const scrollToMobileCart = () => {
@@ -70,14 +75,14 @@ export default function ProductsView({
 
   // Render a product card with heart logo reveal functionality - mobile version
   const renderMobileProductCard = (
-    index: number,
+    key: string,
     card: React.ReactNode
   ) => {
-    if (revealedCards[index]) {
+    if (revealedCards[key]) {
       return (
         <div
           className='flex items-center justify-center bg-black rounded-lg cursor-pointer aspect-[4/5] overflow-hidden'
-          onClick={() => hideCard(index)}
+          onClick={() => hideCard(key)}
         >
           <Image
             src="/HEARTLOGO.png"
@@ -94,14 +99,14 @@ export default function ProductsView({
 
   // Render a product card with heart logo reveal functionality - desktop version
   const renderDesktopProductCard = (
-    index: number,
+    key: string,
     card: React.ReactNode
   ) => {
-    if (revealedCards[index]) {
+    if (revealedCards[key]) {
       return (
         <div
           className='flex items-center justify-center bg-black rounded-sm cursor-pointer h-[288px] overflow-hidden'
-          onClick={() => hideCard(index)}
+          onClick={() => hideCard(key)}
         >
           <Image
             src="/HEARTLOGO.png"
@@ -118,15 +123,15 @@ export default function ProductsView({
 
   // Render cart with heart logo reveal
   const renderCart = (isMobile: boolean = false) => {
-    const cartIndex = 7 // Cart is the 8th item (index 7)
+    const cartKey = 'cart'
 
-    if (revealedCards[cartIndex]) {
+    if (revealedCards[cartKey]) {
       return (
         <div
           className={`flex items-center justify-center bg-black rounded-sm cursor-pointer overflow-hidden ${
             isMobile ? 'aspect-[4/5]' : 'h-[288px]'
           }`}
-          onClick={() => hideCard(cartIndex)}
+          onClick={() => hideCard(cartKey)}
         >
           <Image
             src="/HEARTLOGO.png"
@@ -143,7 +148,7 @@ export default function ProductsView({
       <div className={isMobile ? 'rounded-sm overflow-hidden' : ''}>
         <CartModal
           title='cart'
-          onClose={() => revealCard(cartIndex)}
+          onClose={() => revealCard(cartKey)}
           items={cartItems}
           onUpdateQuantity={onUpdateQuantity}
           onRemoveItem={onRemoveFromCart}
@@ -153,10 +158,6 @@ export default function ProductsView({
       </div>
     )
   }
-
-  // Get first 4 products for top row, next 3 for bottom row
-  const topRowProducts = swingersProducts.slice(0, 4)
-  const bottomRowProducts = swingersProducts.slice(4, 7)
 
   return (
     <>
@@ -175,54 +176,102 @@ export default function ProductsView({
               topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
             }`}
           >
-            {/* All 7 products */}
-            {swingersProducts.map((product, index) => (
-              <div key={product.id} className='w-full'>
-                {renderMobileProductCard(
-                  index,
-                  <MobileProductCard
-                    product={product}
-                    onClose={() => revealCard(index)}
-                    onAddToCart={onAddToCart}
-                  />
-                )}
-              </div>
-            ))}
+            {/* SWINGERS Collection */}
+            {swingersProducts.map((product, index) => {
+              const key = `swingers-${index}`
+              return (
+                <div key={product.id} className='w-full'>
+                  {renderMobileProductCard(
+                    key,
+                    <MobileProductCard
+                      product={product}
+                      onClose={() => revealCard(key)}
+                      onAddToCart={onAddToCart}
+                    />
+                  )}
+                </div>
+              )
+            })}
 
-            {/* Mobile Cart Section - at bottom of scroll */}
+            {/* Mobile Cart Section */}
             <div ref={mobileCartRef} className='w-full'>
               {renderCart(true)}
             </div>
+
+
+            {/* PRE SWINGERS Collection */}
+            {preSwingersProducts.map((product, index) => {
+              const key = `preswingers-${index}`
+              return (
+                <div key={product.id} className='w-full'>
+                  {renderMobileProductCard(
+                    key,
+                    <PreSwingersMobileProductCard
+                      product={product}
+                      onClose={() => revealCard(key)}
+                      onAddToCart={onAddToCart}
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 
-        {/* Desktop Layout - 2 rows of 4 cards using CSS Grid with vertical scroll */}
+        {/* Desktop Layout - Grid with vertical scroll */}
         <div className='hidden md:flex items-start justify-center w-full h-full px-4 overflow-y-auto scrollbar-hide'>
           <div
-            className={`grid grid-cols-4 gap-4 w-full max-w-[1400px] py-4 transition-all duration-700 ease-out ${
+            className={`w-full max-w-[1400px] py-4 transition-all duration-700 ease-out ${
               topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
             }`}
           >
-            {/* All 7 products + cart in a single grid */}
-            {swingersProducts.map((product, index) => (
-              <div key={product.id}>
-                {renderDesktopProductCard(
-                  index,
-                  <ProductCard
-                    title='swingers'
-                    productName={product.title.toLowerCase()}
-                    productDetail={`$${product.variants[0]?.price || 60}`}
-                    onClose={() => revealCard(index)}
-                    product={product}
-                    onAddToCart={onAddToCart}
-                  />
-                )}
+            {/* SWINGERS Collection Grid */}
+            <div className='grid grid-cols-4 gap-4'>
+              {swingersProducts.map((product, index) => {
+                const key = `swingers-${index}`
+                return (
+                  <div key={product.id}>
+                    {renderDesktopProductCard(
+                      key,
+                      <ProductCard
+                        title='swingers'
+                        productName={product.title.toLowerCase()}
+                        productDetail={`$${product.variants[0]?.price || 60}`}
+                        onClose={() => revealCard(key)}
+                        product={product}
+                        onAddToCart={onAddToCart}
+                      />
+                    )}
+                  </div>
+                )
+              })}
+              {/* Cart */}
+              <div>
+                {renderCart(false)}
               </div>
-            ))}
-            {/* Cart */}
-            <div>
-              {renderCart(false)}
             </div>
+
+
+            {/* PRE SWINGERS Collection Grid */}
+            {preSwingersProducts.length > 0 && (
+              <div className='grid grid-cols-4 gap-4 mt-4'>
+                {preSwingersProducts.map((product, index) => {
+                  const key = `preswingers-${index}`
+                  return (
+                    <div key={product.id}>
+                      {renderDesktopProductCard(
+                        key,
+                        <PreSwingersProductCard
+                          product={product}
+                          onClose={() => revealCard(key)}
+                          onAddToCart={onAddToCart}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

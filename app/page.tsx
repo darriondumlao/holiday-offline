@@ -83,7 +83,7 @@ export default function Home() {
   }, [cartItems])
 
   // Cart functions
-  const addToCart = useCallback((product: { name: string; price: number; size?: string; image?: string; variantId?: string }) => {
+  const addToCart = useCallback((product: { name: string; price: number; size?: string; image?: string; variantId?: string; quantityAvailable?: number }) => {
     const id = `${product.name}-${product.size || 'default'}-${Date.now()}`
     const newItem: CartItem = {
       id,
@@ -93,6 +93,7 @@ export default function Home() {
       size: product.size,
       image: product.image,
       variantId: product.variantId,
+      quantityAvailable: product.quantityAvailable,
     }
     setCartItems(prev => [...prev, newItem])
   }, [])

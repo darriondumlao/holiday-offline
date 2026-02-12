@@ -10,6 +10,7 @@ export interface CartItem {
   size?: string
   image?: string
   variantId?: string
+  quantityAvailable?: number
 }
 
 interface CartModalProps {
@@ -70,6 +71,12 @@ export default function CartModal({
   }, [])
 
   const handleCheckout = () => {
+    // If cart is empty, just play the bell sound
+    if (items.length === 0) {
+      playBellSound()
+      return
+    }
+
     if (onCheckout) {
       onCheckout()
     } else {
@@ -172,7 +179,12 @@ export default function CartModal({
                     </span>
                     <button
                       onClick={() => onUpdateQuantity?.(item.id, item.quantity + 1)}
-                      className='w-6 h-6 flex items-center justify-center bg-gray-200 hover:bg-gray-300 active:scale-95 transition-all rounded text-black font-bold text-sm'
+                      disabled={item.quantityAvailable !== undefined && item.quantity >= item.quantityAvailable}
+                      className={`w-6 h-6 flex items-center justify-center transition-all rounded text-black font-bold text-sm ${
+                        item.quantityAvailable !== undefined && item.quantity >= item.quantityAvailable
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-gray-200 hover:bg-gray-300 active:scale-95'
+                      }`}
                       aria-label='Increase quantity'
                     >
                       +
@@ -213,7 +225,7 @@ export default function CartModal({
         <div className='absolute inset-0 bg-black/40' />
         <div className='relative px-2 py-2 flex justify-center'>
           <button
-            onClick={playBellSound}
+            onClick={handleCheckout}
             disabled={isBellPlaying}
             className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
               isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95 hover:bg-black/60'

@@ -1,20 +1,28 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Product } from '@/lib/shopify'
+import { Product, ProductVariant } from '@/lib/shopify'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
 import ImageScroller from './ImageScroller'
 
-interface MobileProductCardProps {
+interface PreSwingersMobileProductCardProps {
   product: Product | null
-  onAddToCart?: (product: { name: string; price: number; size: string; variantId: string }) => void
+  onAddToCart?: (product: { name: string; price: number; size: string; variantId: string; quantityAvailable?: number }) => void
   onClose: () => void
 }
 
-export default function MobileProductCard({ product, onAddToCart, onClose }: MobileProductCardProps) {
+export default function PreSwingersMobileProductCard({ product, onAddToCart, onClose }: PreSwingersMobileProductCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [isBellPlaying, setIsBellPlaying] = useState(false)
   const bellAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  if (!product) return null
+
+  const images = product.images.map(img => img.url)
+  const allVariants = product.variants || []
+
+  // Check if product is completely sold out
+  const isSoldOut = allVariants.length === 0 || allVariants.every(v => !v.availableForSale)
 
   const playBellSound = () => {
     if (isBellPlaying) return
@@ -30,17 +38,29 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
 
     audio.play().catch(console.error)
 
-    // When the bell sound ends, resume music and re-enable button
+    // When the bell sound ends, resume music and re-enable
     audio.onended = () => {
       setIsBellPlaying(false)
       window.dispatchEvent(new CustomEvent('resumeAfterBell'))
     }
   }
 
-  if (!product) return null
+  const handleSizeSelect = (variant: ProductVariant) => {
+    if (!variant.availableForSale) return
 
-  const images = product.images.map(img => img.url)
-  const price = product.variants[0]?.price || 0
+    // Play the bell sound
+    playBellSound()
+
+    if (onAddToCart) {
+      onAddToCart({
+        name: product.name,
+        price: variant.price,
+        size: variant.size,
+        variantId: variant.id,
+        quantityAvailable: variant.quantityAvailable,
+      })
+    }
+  }
 
   return (
     <div className='w-full select-none overflow-hidden bg-black rounded-sm'>
@@ -73,12 +93,19 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
 
       {/* Image Area - with arrows to scroll through images */}
       <div className='relative h-[280px] bg-[#1a1a1a]'>
+        {/* Sold Out Pill */}
+        {isSoldOut && (
+          <div className='absolute top-2 right-2 z-10 rounded-full px-2 py-1 font-bold text-[10px] shadow-lg bg-red-600 text-white animate-pulse'>
+            SOLD OUT
+          </div>
+        )}
+
         {images.length > 0 ? (
           <ImageScroller
             images={images}
             alt={product.name}
             onImageClick={() => setLightboxOpen(true)}
-            scale={product.name.toLowerCase().includes('hldy zip') ? 1.2 : 1.1}
+            scale={1.1}
           />
         ) : (
           <div className='flex items-center justify-center h-full'>
@@ -109,21 +136,39 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
         </div>
       )}
 
-      {/* Footer - Available date (matches desktop ProductCard) */}
+      {/* Footer - Size Selector */}
       <div className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         {/* Dark overlay to dim the pattern */}
         <div className='absolute inset-0 bg-black/40' />
-        <div className='relative px-2 py-2 flex justify-center'>
-          <button
-            className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
-              isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95'
-            }`}
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
-            onClick={playBellSound}
-            disabled={isBellPlaying}
-          >
-            Available Saturday @ 11AM
-          </button>
+        <div className='relative px-2 py-2'>
+          {isSoldOut ? (
+            <div className='flex justify-center'>
+              <span
+                className='text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-red-600/60'
+                style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+              >
+                Sold Out
+              </span>
+            </div>
+          ) : (
+            <div className='flex flex-wrap justify-center gap-1'>
+              {allVariants.map((variant) => (
+                <button
+                  key={variant.id}
+                  onClick={() => handleSizeSelect(variant)}
+                  disabled={!variant.availableForSale}
+                  className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                    variant.availableForSale
+                      ? 'bg-black/40 text-white border border-white/60 hover:bg-white/20 active:scale-95 cursor-pointer'
+                      : 'bg-black/20 text-white/30 border border-white/20 cursor-not-allowed line-through'
+                  }`}
+                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                >
+                  {variant.size}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

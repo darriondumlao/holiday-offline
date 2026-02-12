@@ -195,7 +195,7 @@ export default function ProductCard({
               onClick={playBellSound}
               disabled={isBellPlaying}
             >
-              Available 2/14 @ 11AM
+              Available Saturday @ 11AM
             </button>
           </div>
         </div>
