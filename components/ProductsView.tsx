@@ -39,7 +39,7 @@ export default function ProductsView({
 
   const [topRowVisible, setTopRowVisible] = useState(false)
   const [bottomRowVisible, setBottomRowVisible] = useState(false)
-  const mobileCartRef = useRef<HTMLDivElement>(null)
+  const cartRef = useRef<HTMLDivElement>(null)
 
   // Staggered animation after spotlight completes
   useEffect(() => {
@@ -69,8 +69,8 @@ export default function ProductsView({
     setRevealedCards(prev => ({ ...prev, [key]: false }))
   }
 
-  const scrollToMobileCart = () => {
-    mobileCartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const scrollToCart = () => {
+    cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   // Render a product card with heart logo reveal functionality - mobile version
@@ -193,12 +193,6 @@ export default function ProductsView({
               )
             })}
 
-            {/* Mobile Cart Section */}
-            <div ref={mobileCartRef} className='w-full'>
-              {renderCart(true)}
-            </div>
-
-
             {/* PRE SWINGERS Collection */}
             {preSwingersProducts.map((product, index) => {
               const key = `preswingers-${index}`
@@ -215,6 +209,11 @@ export default function ProductsView({
                 </div>
               )
             })}
+
+            {/* Cart Section - At the bottom */}
+            <div ref={cartRef} className='w-full'>
+              {renderCart(true)}
+            </div>
           </div>
         </div>
 
@@ -245,12 +244,7 @@ export default function ProductsView({
                   </div>
                 )
               })}
-              {/* Cart */}
-              <div>
-                {renderCart(false)}
-              </div>
             </div>
-
 
             {/* PRE SWINGERS Collection Grid */}
             {preSwingersProducts.length > 0 && (
@@ -270,16 +264,20 @@ export default function ProductsView({
                     </div>
                   )
                 })}
+                {/* Cart - At the end of PRE SWINGERS grid */}
+                <div ref={cartRef}>
+                  {renderCart(false)}
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Mobile Scroll to Cart Indicator - Right side */}
+      {/* Scroll to Cart Indicator - Right side (both mobile and desktop) */}
       <button
-        onClick={scrollToMobileCart}
-        className={`md:hidden fixed right-0 top-1/2 -translate-y-1/2 z-50 transition-all duration-300 ${
+        onClick={scrollToCart}
+        className={`fixed right-0 top-1/2 -translate-y-1/2 z-50 transition-all duration-300 ${
           isVisible && cartItems.length > 0
             ? 'opacity-100 translate-x-0'
             : 'opacity-0 translate-x-full pointer-events-none'
