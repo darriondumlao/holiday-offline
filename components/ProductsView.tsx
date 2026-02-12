@@ -39,7 +39,8 @@ export default function ProductsView({
 
   const [topRowVisible, setTopRowVisible] = useState(false)
   const [bottomRowVisible, setBottomRowVisible] = useState(false)
-  const cartRef = useRef<HTMLDivElement>(null)
+  const mobileCartRef = useRef<HTMLDivElement>(null)
+  const desktopCartRef = useRef<HTMLDivElement>(null)
 
   // Staggered animation after spotlight completes
   useEffect(() => {
@@ -70,7 +71,12 @@ export default function ProductsView({
   }
 
   const scrollToCart = () => {
-    cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    // Check if we're on mobile or desktop and scroll to the appropriate cart
+    if (window.innerWidth < 768) {
+      mobileCartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      desktopCartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   // Render a product card with heart logo reveal functionality - mobile version
@@ -211,7 +217,7 @@ export default function ProductsView({
             })}
 
             {/* Cart Section - At the bottom */}
-            <div ref={cartRef} className='w-full'>
+            <div ref={mobileCartRef} className='w-full'>
               {renderCart(true)}
             </div>
           </div>
@@ -265,7 +271,7 @@ export default function ProductsView({
                   )
                 })}
                 {/* Cart - At the end of PRE SWINGERS grid */}
-                <div ref={cartRef}>
+                <div ref={desktopCartRef}>
                   {renderCart(false)}
                 </div>
               </div>
