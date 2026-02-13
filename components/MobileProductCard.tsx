@@ -78,7 +78,11 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
             images={images}
             alt={product.name}
             onImageClick={() => setLightboxOpen(true)}
-            scale={product.name.toLowerCase().includes('hldy zip') ? 1.2 : 1.1}
+            scale={
+              product.name.toLowerCase().includes('hldy zip') ? 0.95
+              : product.name.toLowerCase().includes('melrose') || product.name.toLowerCase().includes('swinger jean') ? 0.95
+              : 1.1
+            }
           />
         ) : (
           <div className='flex items-center justify-center h-full'>

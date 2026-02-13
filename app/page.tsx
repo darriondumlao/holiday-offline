@@ -12,6 +12,7 @@ import AnswersModal from '@/components/AnswersModal'
 import ProblemsModal from '@/components/ProblemsModal'
 import RamboModal from '@/components/RamboModal'
 import TopRightModal from '@/components/TopRightModal'
+import AloneModal from '@/components/AloneModal'
 import BouncingWrapper from '@/components/BouncingWrapper'
 import { BouncingPauseProvider } from '@/contexts/BouncingPauseContext'
 import CountdownTimer from '@/components/CountdownTimer'
@@ -60,6 +61,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<ViewMode>('shop') // 3-tab navigation
   const [showCartModal, setShowCartModal] = useState(false) // Cart modal for vintage view
   const [modalsHidden, setModalsHidden] = useState(false) // Toggle to hide all bouncing modals
+  const [showAloneModal, setShowAloneModal] = useState(false) // "who do you perform for when you're alone?" modal
 
   // Cart state - lifted from ProductsView to persist across views
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -188,6 +190,7 @@ export default function Home() {
     setShowProblemsModal(true)
     setShowRamboModal(true)
     setShowTopRightModal(true)
+    setShowAloneModal(true)
   }, [])
 
   // Show bouncing modals after spotlight completes
@@ -441,6 +444,14 @@ export default function Home() {
                   <RamboModal
                     title='january 29th limited to 99 pairs ($99)'
                     onClose={() => setShowRamboModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+              {showAloneModal && (
+                <BouncingWrapper speed={1.4} initialDirection="se" className="z-40" title="who do you perform for when you're alone?">
+                  <AloneModal
+                    title="who do you perform for when you're alone?"
+                    onClose={() => setShowAloneModal(false)}
                   />
                 </BouncingWrapper>
               )}
