@@ -344,8 +344,8 @@ export default function CountdownTimer({ currentView = 'shop', onViewChange, sho
         <AudioPlayer ref={audioPlayerRef} />
       </div>
 
-      {/* Desktop: Valentine's Day Reservation Content */}
-      <div className="hidden md:flex flex-col items-center justify-center select-none px-24">
+      {/* Desktop: Valentine's Day Reservation Content - temporarily disabled */}
+      {/* <div className="hidden md:flex flex-col items-center justify-center select-none px-24">
         <div className="flex items-center justify-center gap-2 text-white text-sm">
           <span className="tracking-wide">Valentine&apos;s Day Reservations Available Now</span>
           <button
@@ -358,7 +358,7 @@ export default function CountdownTimer({ currentView = 'shop', onViewChange, sho
         <p className="text-rose-200/50 text-[10px] mt-0.5 text-center italic">
           *Reservations guarantee a table but walk-in&apos;s are welcome and encouraged*
         </p>
-      </div>
+      </div> */}
 
       {/* Mobile: Single row - switcher | valentine's | audio */}
       <div className="flex md:hidden items-center justify-between px-2">
@@ -380,8 +380,8 @@ export default function CountdownTimer({ currentView = 'shop', onViewChange, sho
             ))}
           </div>
         )}
-        {/* Center: Valentine's content - two rows */}
-        <div className="flex flex-col items-center flex-1 mx-1">
+        {/* Center: Valentine's content - temporarily disabled */}
+        {/* <div className="flex flex-col items-center flex-1 mx-1">
           <div className="flex items-center justify-center gap-1.5 text-white text-xs">
             <span className="tracking-wide whitespace-nowrap">Valentine&apos;s Day Reservations</span>
             <button
@@ -394,7 +394,7 @@ export default function CountdownTimer({ currentView = 'shop', onViewChange, sho
           <p className="text-rose-200/50 text-[6px] text-center italic">
             *Reservations guarantee a table but walk-in&apos;s are welcome and encouraged*
           </p>
-        </div>
+        </div> */}
         {/* Right: Hide toggle, Cart, Audio Player */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Hide/Show modals toggle - mobile, only on offline view */}
@@ -455,10 +455,10 @@ export default function CountdownTimer({ currentView = 'shop', onViewChange, sho
         </div>
       </div>
 
-      {/* Reservation Modal */}
-      {showReservationModal && (
+      {/* Reservation Modal - temporarily disabled */}
+      {/* {showReservationModal && (
         <ReservationModal onClose={() => setShowReservationModal(false)} />
-      )}
+      )} */}
     </div>
   )
 }
