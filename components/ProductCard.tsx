@@ -107,7 +107,7 @@ export default function ProductCard({
               className='text-white font-bold text-sm lowercase truncate flex-1'
               style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
             >
-              {product.name} {/* (${product.variants[0]?.price || 0}) */}
+              {product.name} (${product.variants[0]?.price || 0})
             </h2>
           <button
             onClick={onClose}
@@ -207,21 +207,36 @@ export default function ProductCard({
               </div>
             ) : (
               <div className='flex flex-wrap justify-center gap-1'>
-                {allVariants.map((variant) => (
+                {allVariants.length === 1 && allVariants[0].size.toLowerCase() === 'default title' ? (
                   <button
-                    key={variant.id}
-                    onClick={() => handleSizeSelect(variant)}
-                    disabled={!variant.availableForSale}
-                    className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
-                      variant.availableForSale
+                    onClick={() => handleSizeSelect(allVariants[0])}
+                    disabled={!allVariants[0].availableForSale}
+                    className={`px-3 py-1 text-[10px] font-bold rounded transition-all ${
+                      allVariants[0].availableForSale
                         ? 'bg-black/40 text-white border border-white/60 hover:bg-white/20 active:scale-95 cursor-pointer'
                         : 'bg-black/20 text-white/30 border border-white/20 cursor-not-allowed line-through'
                     }`}
                     style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
                   >
-                    {variant.size}
+                    add to cart
                   </button>
-                ))}
+                ) : (
+                  allVariants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => handleSizeSelect(variant)}
+                      disabled={!variant.availableForSale}
+                      className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                        variant.availableForSale
+                          ? 'bg-black/40 text-white border border-white/60 hover:bg-white/20 active:scale-95 cursor-pointer'
+                          : 'bg-black/20 text-white/30 border border-white/20 cursor-not-allowed line-through'
+                      }`}
+                      style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                    >
+                      {variant.size}
+                    </button>
+                  ))
+                )}
               </div>
             )}
           </div>
