@@ -11,14 +11,14 @@ import { fetchProductsByCollection } from '@/lib/shopify'
 import { NextRequest, NextResponse } from 'next/server'
 import { unstable_cache } from 'next/cache'
 
-// Cache collection data for 5 minutes, revalidate in background
+// Cache collection data for 60 seconds (launch day - lower for faster updates)
 const getCachedCollection = unstable_cache(
   async (handle: string) => {
     return fetchProductsByCollection(handle)
   },
   ['shopify-collection'],
   {
-    revalidate: 300, // 5 minutes
+    revalidate: 60, // 1 minute (launch day)
     tags: ['shopify', 'collection'],
   }
 )
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       { products },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
         },
       }
     )

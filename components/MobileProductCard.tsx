@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Product } from '@/lib/shopify'
+import { Product, ProductVariant } from '@/lib/shopify'
 import ProductDetailsLightbox from './ProductDetailsLightbox'
 import ImageScroller from './ImageScroller'
 
@@ -41,6 +41,26 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
 
   const images = product.images.map(img => img.url)
   const price = product.variants[0]?.price || 0
+  const allVariants = product.variants || []
+
+  // Check if product is completely sold out
+  const isSoldOut = allVariants.length === 0 || allVariants.every(v => !v.availableForSale)
+
+  const handleSizeSelect = (variant: ProductVariant) => {
+    if (!variant.availableForSale) return
+
+    // Play the bell sound
+    playBellSound()
+
+    if (onAddToCart) {
+      onAddToCart({
+        name: product.name,
+        price: variant.price,
+        size: variant.size,
+        variantId: variant.id,
+      })
+    }
+  }
 
   return (
     <div className='w-full select-none overflow-hidden bg-black rounded-sm'>
@@ -113,21 +133,39 @@ export default function MobileProductCard({ product, onAddToCart, onClose }: Mob
         </div>
       )}
 
-      {/* Footer - Available date (matches desktop ProductCard) */}
+      {/* Footer - Size Selector */}
       <div className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         {/* Dark overlay to dim the pattern */}
         <div className='absolute inset-0 bg-black/40' />
-        <div className='relative px-2 py-2 flex justify-center'>
-          <button
-            className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
-              isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95'
-            }`}
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
-            onClick={playBellSound}
-            disabled={isBellPlaying}
-          >
-            Available Saturday @ 11AM
-          </button>
+        <div className='relative px-2 py-2'>
+          {isSoldOut ? (
+            <div className='flex justify-center'>
+              <span
+                className='text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-red-600/60'
+                style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+              >
+                Sold Out
+              </span>
+            </div>
+          ) : (
+            <div className='flex flex-wrap justify-center gap-1'>
+              {allVariants.map((variant) => (
+                <button
+                  key={variant.id}
+                  onClick={() => handleSizeSelect(variant)}
+                  disabled={!variant.availableForSale}
+                  className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                    variant.availableForSale
+                      ? 'bg-black/40 text-white border border-white/60 hover:bg-white/20 active:scale-95 cursor-pointer'
+                      : 'bg-black/20 text-white/30 border border-white/20 cursor-not-allowed line-through'
+                  }`}
+                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                >
+                  {variant.size}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

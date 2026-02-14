@@ -71,7 +71,12 @@ export default function ProductCard({
   }
 
   const handleSizeSelect = (variant: ProductVariant) => {
-    // Directly add to cart when size is clicked
+    if (!variant.availableForSale) return
+
+    // Play the bell sound
+    playBellSound()
+
+    // Add to cart when size is clicked
     if (product && onAddToCart) {
       onAddToCart({
         name: product.name,
@@ -186,21 +191,39 @@ export default function ProductCard({
           </button>
         </div>
 
-        {/* Size Selector - Temporarily showing "Available 2/14 @ 11AM" */}
+        {/* Size Selector Footer */}
         <div ref={footerRef} className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
           {/* Dark overlay to dim the pattern */}
           <div className='absolute inset-0 bg-black/40' />
-          <div className='relative px-2 py-2 flex justify-center'>
-            <button
-              className={`text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-black/40 transition-all ${
-                isBellPlaying ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95 hover:bg-black/60'
-              }`}
-              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
-              onClick={playBellSound}
-              disabled={isBellPlaying}
-            >
-              Available Saturday @ 11AM
-            </button>
+          <div className='relative px-2 py-2'>
+            {isSoldOut ? (
+              <div className='flex justify-center'>
+                <span
+                  className='text-white font-bold text-xs tracking-wide border border-white/60 rounded px-3 py-1 bg-red-600/60'
+                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,1)' }}
+                >
+                  Sold Out
+                </span>
+              </div>
+            ) : (
+              <div className='flex flex-wrap justify-center gap-1'>
+                {allVariants.map((variant) => (
+                  <button
+                    key={variant.id}
+                    onClick={() => handleSizeSelect(variant)}
+                    disabled={!variant.availableForSale}
+                    className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                      variant.availableForSale
+                        ? 'bg-black/40 text-white border border-white/60 hover:bg-white/20 active:scale-95 cursor-pointer'
+                        : 'bg-black/20 text-white/30 border border-white/20 cursor-not-allowed line-through'
+                    }`}
+                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                  >
+                    {variant.size}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
