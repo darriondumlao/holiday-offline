@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import ProductCard from './ProductCard'
 import MobileProductCard from './MobileProductCard'
+import PasswordProductCard from './PasswordProductCard'
+import MobilePasswordCard from './MobilePasswordCard'
 import PreSwingersProductCard from './PreSwingersProductCard'
 import PreSwingersMobileProductCard from './PreSwingersMobileProductCard'
 import CartModal, { CartItem } from './CartModal'
@@ -78,6 +80,10 @@ export default function ProductsView({
       desktopCartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
+
+  // Check if a product is the hidden/password-protected item
+  const isHiddenProduct = (product: { name: string }) =>
+    product.name.toLowerCase().includes('+ more') || product.name.toLowerCase().includes('hidden')
 
   // Render a product card with heart logo reveal functionality - mobile version
   const renderMobileProductCard = (
@@ -187,14 +193,24 @@ export default function ProductsView({
               const key = `swingers-${index}`
               return (
                 <div key={product.id} className='w-full'>
-                  {renderMobileProductCard(
-                    key,
-                    <MobileProductCard
-                      product={product}
-                      onClose={() => revealCard(key)}
-                      onAddToCart={onAddToCart}
-                    />
-                  )}
+                  {isHiddenProduct(product)
+                    ? renderMobileProductCard(
+                        key,
+                        <MobilePasswordCard
+                          product={product}
+                          onClose={() => revealCard(key)}
+                          onAddToCart={onAddToCart}
+                        />
+                      )
+                    : renderMobileProductCard(
+                        key,
+                        <MobileProductCard
+                          product={product}
+                          onClose={() => revealCard(key)}
+                          onAddToCart={onAddToCart}
+                        />
+                      )
+                  }
                 </div>
               )
             })}
@@ -236,17 +252,28 @@ export default function ProductsView({
                 const key = `swingers-${index}`
                 return (
                   <div key={product.id}>
-                    {renderDesktopProductCard(
-                      key,
-                      <ProductCard
-                        title='swingers'
-                        productName={product.title.toLowerCase()}
-                        productDetail={`$${product.variants[0]?.price || 60}`}
-                        onClose={() => revealCard(key)}
-                        product={product}
-                        onAddToCart={onAddToCart}
-                      />
-                    )}
+                    {isHiddenProduct(product)
+                      ? renderDesktopProductCard(
+                          key,
+                          <PasswordProductCard
+                            title='private item'
+                            onClose={() => revealCard(key)}
+                            product={product}
+                            onAddToCart={onAddToCart}
+                          />
+                        )
+                      : renderDesktopProductCard(
+                          key,
+                          <ProductCard
+                            title='swingers'
+                            productName={product.title.toLowerCase()}
+                            productDetail={`$${product.variants[0]?.price || 60}`}
+                            onClose={() => revealCard(key)}
+                            product={product}
+                            onAddToCart={onAddToCart}
+                          />
+                        )
+                    }
                   </div>
                 )
               })}
