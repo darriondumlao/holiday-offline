@@ -4,21 +4,21 @@
  * Fetches products from a specific Shopify collection by handle.
  * Usage: GET /api/shopify/collection?handle=offline
  *
- * Caching: 5 minute cache with stale-while-revalidate for optimal performance
+ * Caching: 5 minute server cache + CDN cache with stale-while-revalidate
  */
 
 import { fetchProductsByCollection } from '@/lib/shopify'
 import { NextRequest, NextResponse } from 'next/server'
 import { unstable_cache } from 'next/cache'
 
-// Cache collection data for 60 seconds (launch day - lower for faster updates)
+// Cache collection data for 5 minutes with stale-while-revalidate
 const getCachedCollection = unstable_cache(
   async (handle: string) => {
     return fetchProductsByCollection(handle)
   },
   ['shopify-collection'],
   {
-    revalidate: 60, // 1 minute (launch day)
+    revalidate: 300, // 5 minutes
     tags: ['shopify', 'collection'],
   }
 )
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       { products },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
         },
       }
     )

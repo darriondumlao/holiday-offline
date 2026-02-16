@@ -106,7 +106,7 @@ export default function PreSwingersProductCard({
       <div className='relative h-[216px] bg-[#1a1a1a]'>
         {/* Sold Out Pill */}
         {isSoldOut && (
-          <div className='absolute top-2 right-2 z-10 rounded-full px-2 py-1 md:px-3 md:py-1.5 font-bold text-[10px] md:text-sm shadow-lg bg-red-600 text-white animate-pulse'>
+          <div className='absolute top-2 right-2 z-10 rounded-full px-2 py-1 font-bold text-[10px] shadow-lg bg-red-600 text-white animate-pulse'>
             SOLD OUT
           </div>
         )}

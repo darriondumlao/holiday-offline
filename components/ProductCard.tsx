@@ -132,12 +132,12 @@ export default function ProductCard({
 
         {/* Content Area - Image Scroller or Title Fallback */}
         <div ref={contentRef} className='h-[120px] md:h-[216px] relative'>
-          {/* Sold Out Pill - Temporarily hidden for pre-launch */}
-          {/* <LimitedDropTimer
-            isActive={isSoldOut}
-            manualSoldOut={isSoldOut}
-            startedAt={null}
-          /> */}
+          {/* Sold Out Pill */}
+          {isSoldOut && (
+            <div className='absolute top-2 right-2 z-10 rounded-full px-2 py-1 font-bold text-[10px] shadow-lg bg-red-600 text-white animate-pulse'>
+              SOLD OUT
+            </div>
+          )}
           {images.length > 0 ? (
             <ImageScroller
               images={images}
