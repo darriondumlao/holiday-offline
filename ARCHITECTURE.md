@@ -379,9 +379,9 @@ Sizes: sm = 20px, md = 32px (default), lg = 48px. Used in ImageSlideshowModal an
 | Route | Method | Purpose | External Service | Caching |
 |-------|--------|---------|-----------------|---------|
 | `/api/ticker` | GET | Fetch active ticker messages ordered by `order` field | Sanity CMS | `revalidate: 3600` (1hr) |
-| `/api/downloadable-content` | GET | Fetch active downloadable content with file URL + extension | Sanity CMS | None |
-| `/api/slideshow` | GET | Fetch active slideshow images, flattened into single array with URLs + alt text | Sanity CMS | None |
-| `/api/site-audio` | GET | Fetch active background music audio URL | Sanity CMS | None |
+| `/api/downloadable-content` | GET | Fetch active downloadable content with file URL + extension | Sanity CMS | `revalidate: 3600` (1hr) |
+| `/api/slideshow` | GET | Fetch active slideshow images, flattened into single array with URLs + alt text | Sanity CMS | `revalidate: 3600` (1hr) |
+| `/api/site-audio` | GET | Fetch active background music audio URL | Sanity CMS | `revalidate: 3600` (1hr) |
 | `/api/answers` | GET | Parse `public/Holiday Landing Responses - Sheet1.csv`, filter empty/short/link entries | Local CSV | None |
 | `/api/problems` | GET | Parse `public/Offline Answers PT 2 - answers.csv`, filter empty/short/link/placeholder entries | Local CSV | None |
 | `/api/submit-holiday-answer` | POST | Validate + sanitize answer, append to Google Sheet with timestamp | Google Sheets API | N/A |
@@ -389,7 +389,7 @@ Sizes: sm = 20px, md = 32px (default), lg = 48px. Used in ImageSlideshowModal an
 | `/api/secret-product-auth` | POST | Timing-safe password comparison via `crypto.timingSafeEqual` | None (env var) | N/A |
 | `/api/shopify/collection` | GET | Fetch products by `?handle=` query param, GraphQL query for 50 products/10 images/20 variants | Shopify Storefront API | `unstable_cache` 5min + `s-maxage=300` |
 | `/api/shopify/checkout` | POST | Validate line items, execute `cartCreate` GraphQL mutation, return `{ id, webUrl }` | Shopify Storefront API | N/A |
-| `/api/revalidate` | POST | Secret-protected webhook endpoint, revalidates `/api/ticker` path | Sanity webhook | N/A |
+| `/api/revalidate` | POST | Secret-protected webhook endpoint, revalidates all 4 cached Sanity API routes (`ticker`, `site-audio`, `downloadable-content`, `slideshow`) | Sanity webhook | N/A |
 
 ---
 
@@ -397,15 +397,15 @@ Sizes: sm = 20px, md = 32px (default), lg = 48px. Used in ImageSlideshowModal an
 
 ### Sanity CMS (project: `uq9s8one`, dataset: `production`)
 
-Used for: ticker messages, downloadable content, slideshow images, site audio. Client configured in `lib/sanity.ts`. Embedded studio available at `/studio` route.
+Used for: ticker messages, downloadable content, slideshow images, site audio. Client configured in `lib/sanity.ts` with `useCdn: true` (edge caching enabled). Embedded studio available at `/studio` route (hosted in the separate `holiday-alpha` repo). A Sanity webhook triggers `/api/revalidate` on content publish, busting all cached API routes immediately.
 
 Active schema types for this landing page:
-- `tickerMessage` (text, isActive, order)
-- `downloadableContent` (title, questionText, downloadableImage, downloadFileName, isActive, delaySeconds)
+- `ticker` (text, isActive, order)
+- `downloadableContent` (title, questionText, downloadableFile, downloadFileName, isActive, delaySeconds)
 - `offlineSlideshow1` (image arrays, isActive)
 - `siteAudio` (title, audioFile, isActive)
 
-The `lib/sanity.ts` file also contains interfaces and query functions for a larger brand site (Lookbook, Radio, YouTube, Staff, Collab, Press, Archive) that are not actively used by this landing page but share the same Sanity project.
+The `lib/sanity.ts` file also contains interfaces and query functions for a larger brand site (Lookbook, Radio, YouTube, Staff, Collab, Press, Archive, Location) that are not actively used by this landing page but share the same Sanity project.
 
 ### Shopify Storefront API
 
@@ -480,7 +480,7 @@ Products not in the list sort to the end, preserving original order.
 
 | File | Used By | Purpose |
 |------|---------|---------|
-| `h.png` | page.tsx (offline view logo) | Holiday brand logo, large (1.8MB) |
+| `h.png` | page.tsx (offline view logo) | Holiday brand logo, compressed (230KB, 760x760) |
 | `HEARTLOGO.png` | ProductsView.tsx (card reveal overlay) | Heart logo shown when product card is "closed" |
 | `swingers-1.png` | ProductCard, PasswordProductCard, CartModal (header/footer bg) | Tartan/plaid pattern used as background-image on card chrome |
 | `swingers-bell.mp3` | ProductCard, CartModal (add-to-cart sound) | Bell sound effect played on add-to-cart and empty checkout |
@@ -582,10 +582,12 @@ Other images in `public/` (`finalcorrection.jpeg`, `gh-sucess.jpeg`, `holiday-la
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
-| 2025-02-16 | Initial architecture documentation created | `ARCHITECTURE.md` |
-| 2025-02-16 | Added `sizes` prop to `<Image fill>` components for performance; removed debug console.logs and unused refs from CartModal | `app/page.tsx`, `components/TopRightModal.tsx`, `components/CartModal.tsx` |
-| 2025-02-16 | Added `metadataBase` to metadata export for OG/Twitter image resolution; removed unused `.volume-slider-vertical` CSS (dead code with deprecated `-webkit-appearance: slider-vertical`) | `app/layout.tsx`, `app/globals.css` |
-| 2025-02-16 | Added arrow key navigation (ArrowUp/ArrowDown) to desktop offline modal cards via global `keydown` listener; only active when `currentView === 'offline'`, skips when input/textarea/select is focused | `app/page.tsx` |
-| 2025-02-16 | Removed default browser focus outline from offline/shop toggle buttons by adding `focus:outline-none` | `components/HeaderContent.tsx` |
-| 2025-02-16 | Added arrow key navigation (ArrowUp/ArrowDown) to desktop shop product grid; scrolls 400px per press, only active when shop view is visible | `components/ProductsView.tsx` |
-| 2025-02-16 | Performance: compressed h.png (1.7MB→230KB), HEARTLOGO.png (432KB→133KB), swingers-1.png (1.0MB→689KB); added Cache-Control + revalidate to all Sanity API routes; enabled Sanity CDN; lazy-loaded 5 modal components with next/dynamic; adjusted spotlight-reveal to fade from 40% instead of 70% for faster LCP | `public/h.png`, `public/HEARTLOGO.png`, `public/swingers-1.png`, `app/api/*/route.ts`, `lib/sanity.ts`, `app/page.tsx`, `app/globals.css` |
+| 2026-02-16 | Initial architecture documentation created | `ARCHITECTURE.md` |
+| 2026-02-16 | Added `sizes` prop to `<Image fill>` components for performance; removed debug console.logs and unused refs from CartModal | `app/page.tsx`, `components/TopRightModal.tsx`, `components/CartModal.tsx` |
+| 2026-02-16 | Added `metadataBase` to metadata export for OG/Twitter image resolution; removed unused `.volume-slider-vertical` CSS (dead code with deprecated `-webkit-appearance: slider-vertical`) | `app/layout.tsx`, `app/globals.css` |
+| 2026-02-16 | Added arrow key navigation (ArrowUp/ArrowDown) to desktop offline modal cards via global `keydown` listener; only active when `currentView === 'offline'`, skips when input/textarea/select is focused | `app/page.tsx` |
+| 2026-02-16 | Removed default browser focus outline from offline/shop toggle buttons by adding `focus:outline-none` | `components/HeaderContent.tsx` |
+| 2026-02-16 | Added arrow key navigation (ArrowUp/ArrowDown) to desktop shop product grid; scrolls 400px per press, only active when shop view is visible | `components/ProductsView.tsx` |
+| 2026-02-16 | Performance: compressed h.png (1.7MB→230KB), HEARTLOGO.png (432KB→133KB), swingers-1.png (1.0MB→689KB); added Cache-Control + revalidate to all Sanity API routes; enabled Sanity CDN; lazy-loaded 5 modal components with next/dynamic; adjusted spotlight-reveal to fade from 40% instead of 70% for faster LCP | `public/h.png`, `public/HEARTLOGO.png`, `public/swingers-1.png`, `app/api/*/route.ts`, `lib/sanity.ts`, `app/page.tsx`, `app/globals.css` |
+| 2026-02-16 | Expanded `/api/revalidate` to bust all 4 cached Sanity API routes (was ticker-only); Sanity webhook now triggers full cache invalidation on content publish | `app/api/revalidate/route.ts` |
+| 2026-02-16 | Removed `limitedDrop` schema type and "9 Year Rambo" document from Sanity; deleted `limitedDrop.js`, `startDropAction.js`, and related config from Studio repo (`holiday-alpha`) | Sanity schema (cloud), `holiday-alpha` repo |
