@@ -1,24 +1,27 @@
 import { revalidatePath } from 'next/cache'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { parseBody } from 'next-sanity/webhook'
 
 export async function POST(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get('secret')
-
-  // Verify the webhook secret
-  if (secret !== process.env.REVALIDATE_SECRET) {
-    return NextResponse.json({ message: 'Invalid secret' }, { status: 401 })
-  }
-
   try {
+    const { isValidSignature, body } = await parseBody(
+      request,
+      process.env.SANITY_WEBHOOK_SECRET
+    )
+
+    if (!isValidSignature) {
+      return new Response('Invalid signature', { status: 401 })
+    }
+
     // Revalidate all cached API routes
     revalidatePath('/api/ticker')
     revalidatePath('/api/site-audio')
     revalidatePath('/api/downloadable-content')
     revalidatePath('/api/slideshow')
 
-    return NextResponse.json({ revalidated: true, now: Date.now() })
+    return Response.json({ revalidated: true, now: Date.now() })
   } catch (error) {
     console.error('Error revalidating:', error)
-    return NextResponse.json({ message: 'Error revalidating' }, { status: 500 })
+    return new Response('Error revalidating', { status: 500 })
   }
 }
