@@ -3,14 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import ProductCard from './ProductCard'
-import MobileProductCard from './MobileProductCard'
 import PasswordProductCard from './PasswordProductCard'
-import MobilePasswordCard from './MobilePasswordCard'
-import PreSwingersProductCard from './PreSwingersProductCard'
-import PreSwingersMobileProductCard from './PreSwingersMobileProductCard'
 import CartModal, { CartItem } from './CartModal'
-import { useSwingersCollection } from '@/hooks/useSwingersCollection'
-import { usePreSwingersCollection } from '@/hooks/usePreSwingersCollection'
+import { useShopifyCollection, sortSwingersProducts } from '@/hooks/useShopifyCollection'
 
 interface ProductsViewProps {
   isVisible: boolean
@@ -32,8 +27,8 @@ export default function ProductsView({
   onCheckout
 }: ProductsViewProps) {
   // Fetch products from Shopify collections
-  const { products: swingersProducts, loading: swingersLoading } = useSwingersCollection()
-  const { products: preSwingersProducts, loading: preSwingersLoading } = usePreSwingersCollection()
+  const { products: swingersProducts, loading: swingersLoading } = useShopifyCollection('swingers', sortSwingersProducts)
+  const { products: preSwingersProducts, loading: preSwingersLoading } = useShopifyCollection('pre-swingers')
 
   // Track which cards are revealed (showing heart logo)
   // Using string keys like 'swingers-0', 'preswingers-0' to differentiate collections
@@ -43,6 +38,7 @@ export default function ProductsView({
   const [bottomRowVisible, setBottomRowVisible] = useState(false)
   const mobileCartRef = useRef<HTMLDivElement>(null)
   const desktopCartRef = useRef<HTMLDivElement>(null)
+  const desktopScrollContainerRef = useRef<HTMLDivElement>(null)
 
   // Staggered animation after spotlight completes
   useEffect(() => {
@@ -63,6 +59,30 @@ export default function ProductsView({
       }
     }
   }, [showAfterSpotlight, isVisible])
+
+  // Arrow key navigation for desktop product grid
+  useEffect(() => {
+    if (!isVisible) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      const container = desktopScrollContainerRef.current
+      if (!container) return
+
+      e.preventDefault()
+      container.scrollBy({
+        top: e.key === 'ArrowDown' ? 400 : -400,
+        behavior: 'smooth'
+      })
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isVisible])
 
   const revealCard = (key: string) => {
     setRevealedCards(prev => ({ ...prev, [key]: true }))
@@ -85,88 +105,63 @@ export default function ProductsView({
   const isHiddenProduct = (product: { name: string }) =>
     product.name.toLowerCase().includes('+ more') || product.name.toLowerCase().includes('hidden')
 
-  // Render a product card with heart logo reveal functionality - mobile version
-  const renderMobileProductCard = (
+  // Render a product card with heart logo reveal overlay
+  const renderProductCard = (
     key: string,
     card: React.ReactNode
   ) => {
-    if (revealedCards[key]) {
-      return (
-        <div
-          className='flex items-center justify-center bg-black rounded-lg cursor-pointer aspect-[4/5] overflow-hidden'
-          onClick={() => hideCard(key)}
-        >
-          <Image
-            src="/HEARTLOGO.png"
-            alt="Holiday Heart"
-            width={120}
-            height={120}
-            className="object-contain hover:scale-110 transition-transform duration-300"
-          />
-        </div>
-      )
-    }
-    return card
-  }
-
-  // Render a product card with heart logo reveal functionality - desktop version
-  const renderDesktopProductCard = (
-    key: string,
-    card: React.ReactNode
-  ) => {
-    if (revealedCards[key]) {
-      return (
-        <div
-          className='flex items-center justify-center bg-black rounded-sm cursor-pointer h-[288px] overflow-hidden'
-          onClick={() => hideCard(key)}
-        >
-          <Image
-            src="/HEARTLOGO.png"
-            alt="Holiday Heart"
-            width={150}
-            height={150}
-            className="object-contain hover:scale-110 transition-transform duration-300"
-          />
-        </div>
-      )
-    }
-    return card
+    return (
+      <div className='relative'>
+        {card}
+        {revealedCards[key] && (
+          <div
+            className='absolute inset-0 flex items-center justify-center bg-black rounded-sm cursor-pointer overflow-hidden z-10'
+            onClick={() => hideCard(key)}
+          >
+            <Image
+              src="/HEARTLOGO.png"
+              alt="Holiday Heart"
+              width={120}
+              height={120}
+              className="object-contain hover:scale-110 transition-transform duration-300 md:w-[150px] md:h-[150px]"
+            />
+          </div>
+        )}
+      </div>
+    )
   }
 
   // Render cart with heart logo reveal
   const renderCart = (isMobile: boolean = false) => {
     const cartKey = 'cart'
 
-    if (revealedCards[cartKey]) {
-      return (
-        <div
-          className={`flex items-center justify-center bg-black rounded-sm cursor-pointer overflow-hidden ${
-            isMobile ? 'aspect-[4/5]' : 'h-[288px]'
-          }`}
-          onClick={() => hideCard(cartKey)}
-        >
-          <Image
-            src="/HEARTLOGO.png"
-            alt="Holiday Heart"
-            width={isMobile ? 120 : 150}
-            height={isMobile ? 120 : 150}
-            className="object-contain hover:scale-110 transition-transform duration-300"
+    return (
+      <div className='relative'>
+        <div className={isMobile ? 'rounded-sm overflow-hidden' : ''}>
+          <CartModal
+            title='cart'
+            onClose={() => revealCard(cartKey)}
+            items={cartItems}
+            onUpdateQuantity={onUpdateQuantity}
+            onRemoveItem={onRemoveFromCart}
+            onCheckout={onCheckout}
+            isMobileEmbedded={isMobile}
           />
         </div>
-      )
-    }
-
-    return (
-      <div className={isMobile ? 'rounded-sm overflow-hidden' : ''}>
-        <CartModal
-          title='cart'
-          onClose={() => revealCard(cartKey)}
-          items={cartItems}
-          onUpdateQuantity={onUpdateQuantity}
-          onRemoveItem={onRemoveFromCart}
-          onCheckout={onCheckout}
-          isMobileEmbedded={isMobile}
-        />
+        {revealedCards[cartKey] && (
+          <div
+            className='absolute inset-0 flex items-center justify-center bg-black rounded-sm cursor-pointer overflow-hidden z-10'
+            onClick={() => hideCard(cartKey)}
+          >
+            <Image
+              src="/HEARTLOGO.png"
+              alt="Holiday Heart"
+              width={isMobile ? 120 : 150}
+              height={isMobile ? 120 : 150}
+              className="object-contain hover:scale-110 transition-transform duration-300"
+            />
+          </div>
+        )}
       </div>
     )
   }
@@ -194,17 +189,17 @@ export default function ProductsView({
               return (
                 <div key={product.id} className='w-full'>
                   {isHiddenProduct(product)
-                    ? renderMobileProductCard(
+                    ? renderProductCard(
                         key,
-                        <MobilePasswordCard
+                        <PasswordProductCard
                           product={product}
                           onClose={() => revealCard(key)}
                           onAddToCart={onAddToCart}
                         />
                       )
-                    : renderMobileProductCard(
+                    : renderProductCard(
                         key,
-                        <MobileProductCard
+                        <ProductCard
                           product={product}
                           onClose={() => revealCard(key)}
                           onAddToCart={onAddToCart}
@@ -220,9 +215,9 @@ export default function ProductsView({
               const key = `preswingers-${index}`
               return (
                 <div key={product.id} className='w-full'>
-                  {renderMobileProductCard(
+                  {renderProductCard(
                     key,
-                    <PreSwingersMobileProductCard
+                    <ProductCard
                       product={product}
                       onClose={() => revealCard(key)}
                       onAddToCart={onAddToCart}
@@ -240,7 +235,7 @@ export default function ProductsView({
         </div>
 
         {/* Desktop Layout - Grid with vertical scroll */}
-        <div className='hidden md:flex items-start justify-center w-full h-full px-4 overflow-y-auto scrollbar-hide'>
+        <div ref={desktopScrollContainerRef} className='hidden md:flex items-start justify-center w-full h-full px-4 overflow-y-auto scrollbar-hide'>
           <div
             className={`w-full max-w-[1400px] py-4 transition-all duration-700 ease-out ${
               topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
@@ -253,23 +248,19 @@ export default function ProductsView({
                 return (
                   <div key={product.id}>
                     {isHiddenProduct(product)
-                      ? renderDesktopProductCard(
+                      ? renderProductCard(
                           key,
                           <PasswordProductCard
-                            title='private item'
-                            onClose={() => revealCard(key)}
                             product={product}
+                            onClose={() => revealCard(key)}
                             onAddToCart={onAddToCart}
                           />
                         )
-                      : renderDesktopProductCard(
+                      : renderProductCard(
                           key,
                           <ProductCard
-                            title='swingers'
-                            productName={product.title.toLowerCase()}
-                            productDetail={`$${product.variants[0]?.price || 60}`}
-                            onClose={() => revealCard(key)}
                             product={product}
+                            onClose={() => revealCard(key)}
                             onAddToCart={onAddToCart}
                           />
                         )
@@ -286,9 +277,9 @@ export default function ProductsView({
                   const key = `preswingers-${index}`
                   return (
                     <div key={product.id}>
-                      {renderDesktopProductCard(
+                      {renderProductCard(
                         key,
-                        <PreSwingersProductCard
+                        <ProductCard
                           product={product}
                           onClose={() => revealCard(key)}
                           onAddToCart={onAddToCart}

@@ -128,7 +128,7 @@ function transformProduct(product: ShopifyProduct, index: number = 0): Product {
     id: product.id,
     position: index + 1,
     name: product.title,
-    description: product.description || 'No description available',
+    description: product.description?.toLowerCase().includes('no description') ? '' : (product.description || ''),
     image_url: product.images.edges[0]?.node.url || '',
     images: product.images.edges.map((edge) => ({
       url: edge.node.url,
@@ -146,110 +146,6 @@ function transformProduct(product: ShopifyProduct, index: number = 0): Product {
       }
     }),
     title: product.title,
-  }
-}
-
-/**
- * Fetch all products from Shopify (SERVER-SIDE)
- * Use this in Server Components and API routes
- */
-export async function fetchProducts(): Promise<Product[]> {
-  const query = `
-    {
-      products(first: 50) {
-        edges {
-          node {
-            id
-            title
-            description
-            images(first: 10) {
-              edges {
-                node {
-                  url
-                  altText
-                }
-              }
-            }
-            variants(first: 20) {
-              edges {
-                node {
-                  id
-                  title
-                  price {
-                    amount
-                    currencyCode
-                  }
-                  availableForSale
-                  quantityAvailable
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  `
-
-  try {
-    const data = await shopifyFetch(query)
-    return data.products.edges.map(
-      (edge: { node: ShopifyProduct }, index: number) => transformProduct(edge.node, index)
-    )
-  } catch (error) {
-    console.error('Error fetching products from Shopify:', error)
-    throw error
-  }
-}
-
-/**
- * Fetch a single product by ID (SERVER-SIDE)
- * Use this in Server Components and API routes
- */
-export async function fetchProductById(productId: string): Promise<Product | null> {
-  const query = `
-    query ProductById($id: ID!) {
-      node(id: $id) {
-        ... on Product {
-          id
-          title
-          description
-          images(first: 10) {
-            edges {
-              node {
-                url
-                altText
-              }
-            }
-          }
-          variants(first: 20) {
-            edges {
-              node {
-                id
-                title
-                price {
-                  amount
-                  currencyCode
-                }
-                availableForSale
-              }
-            }
-          }
-        }
-      }
-    }
-  `
-
-  try {
-    const data = await shopifyFetch(query, { id: productId })
-
-    if (!data.node) {
-      return null
-    }
-
-    return transformProduct(data.node, 0)
-  } catch (error) {
-    console.error('Error fetching product from Shopify:', error)
-    throw error
   }
 }
 
@@ -315,91 +211,9 @@ export async function fetchProductsByCollection(collectionHandle: string): Promi
   }
 }
 
-/**
- * Create a cart and get checkout URL (SERVER-SIDE)
- * Use this in Server Components and API routes
- */
-export async function createCheckout(
-  lineItems: Array<{ variantId: string; quantity: number }>
-): Promise<{ id: string; webUrl: string }> {
-  const mutation = `
-    mutation cartCreate($input: CartInput!) {
-      cartCreate(input: $input) {
-        cart {
-          id
-          checkoutUrl
-          lines(first: 250) {
-            edges {
-              node {
-                id
-                quantity
-                merchandise {
-                  ... on ProductVariant {
-                    id
-                    title
-                  }
-                }
-              }
-            }
-          }
-        }
-        userErrors {
-          message
-          field
-        }
-      }
-    }
-  `
-
-  const variables = {
-    input: {
-      lines: lineItems.map((item) => ({
-        merchandiseId: item.variantId,
-        quantity: item.quantity,
-      })),
-    },
-  }
-
-  try {
-    const data = await shopifyFetch(mutation, variables)
-
-    if (data.cartCreate.userErrors.length > 0) {
-      console.error('Cart user errors:', data.cartCreate.userErrors)
-      const errorMessages = data.cartCreate.userErrors
-        .map((e: { message: string }) => e.message)
-        .join(', ')
-      throw new Error(`Cart error: ${errorMessages}`)
-    }
-
-    return {
-      id: data.cartCreate.cart.id,
-      webUrl: data.cartCreate.cart.checkoutUrl,
-    }
-  } catch (error) {
-    console.error('Error creating cart:', error)
-    throw error
-  }
-}
-
 // ============================================================================
 // CLIENT-SIDE FUNCTIONS (for Client Components - use API routes)
 // ============================================================================
-
-/**
- * Fetch all products from Shopify (CLIENT-SIDE)
- * Use this in Client Components
- */
-export async function fetchProductsClient(): Promise<Product[]> {
-  const response = await fetch('/api/shopify/products')
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.message || 'Failed to fetch products')
-  }
-
-  const data = await response.json()
-  return data.products
-}
 
 /**
  * Create a checkout (CLIENT-SIDE)

@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import RetroLoader from './RetroLoader'
 import ModalWrapper from './ModalWrapper'
 
-interface ProblemsModalProps {
+interface QAModalProps {
   onClose: () => void
   title?: string
+  apiEndpoint: string
+  watchUrl: string
 }
 
-export default function ProblemsModal({ onClose, title = 'what problem do you wish you could solve?' }: ProblemsModalProps) {
+export default function QAModal({ onClose, title = '', apiEndpoint, watchUrl }: QAModalProps) {
   const [answers, setAnswers] = useState<string[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -20,7 +22,7 @@ export default function ProblemsModal({ onClose, title = 'what problem do you wi
   useEffect(() => {
     const fetchAnswers = async () => {
       try {
-        const response = await fetch('/api/problems')
+        const response = await fetch(apiEndpoint)
         const data = await response.json()
 
         if (data.answers && data.answers.length > 0) {
@@ -42,7 +44,7 @@ export default function ProblemsModal({ onClose, title = 'what problem do you wi
     }
 
     fetchAnswers()
-  }, [])
+  }, [apiEndpoint])
 
   const getNextAnswer = useCallback(() => {
     if (answers.length === 0) return
@@ -66,11 +68,7 @@ export default function ProblemsModal({ onClose, title = 'what problem do you wi
   }, [historyIndex])
 
   const handleWatch = () => {
-    window.open(
-      'https://youtu.be/TVAQx8phmjk?si=9izgaAKGviClJoM5',
-      '_blank',
-      'noopener,noreferrer'
-    )
+    window.open(watchUrl, '_blank', 'noopener,noreferrer')
   }
 
   const currentAnswer = history[historyIndex] || ''

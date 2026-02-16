@@ -8,7 +8,10 @@ export async function GET() {
   try {
     const messages = await getTickerMessages()
 
-    return NextResponse.json({ messages })
+    return NextResponse.json(
+      { messages },
+      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' } }
+    )
   } catch (error) {
     console.error('Error fetching ticker messages:', error)
     return NextResponse.json(

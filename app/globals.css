@@ -133,7 +133,7 @@ html, body {
   0% {
     opacity: 1;
   }
-  70% {
+  40% {
     opacity: 1;
   }
   100% {
@@ -230,32 +230,6 @@ button[disabled],
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Vertical volume slider for mobile */
-.volume-slider-vertical {
-  appearance: none;
-  -webkit-appearance: slider-vertical;
-}
-
-.volume-slider-vertical::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.volume-slider-vertical::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
 /* Ticker Animation */
 @keyframes ticker {
   0% {
@@ -325,21 +299,17 @@ button[disabled],
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Smooth scroll snap for modal sidebars */
-.snap-y {
-  scroll-snap-type: y mandatory;
+/* Always hide scrollbar, even on hover */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.snap-center {
-  scroll-snap-align: center;
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
-/* Scroll deceleration effect */
-.snap-mandatory {
-  scroll-snap-type: y mandatory;
-  scroll-padding-top: 6rem;
-  scroll-padding-bottom: 2rem;
-}
+/* Scroll snap handled by Tailwind utilities (snap-x, snap-y, snap-center, snap-mandatory) */
 
 /* Slide up animation for mobile cart drawer */
 @keyframes slide-up {

@@ -1,29 +1,25 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
-import BottomLeftModal from '@/components/BottomLeftModal'
-import OfflineModal from '@/components/OfflineModal'
-import CenterModal from '@/components/CenterModal'
-import ModalSidebar from '@/components/ModalSidebar'
-import ImageSlideshowModal from '@/components/ImageSlideshowModal'
-import AnswersModal from '@/components/AnswersModal'
-import ProblemsModal from '@/components/ProblemsModal'
-import RamboModal from '@/components/RamboModal'
-import TopRightModal from '@/components/TopRightModal'
-import AloneModal from '@/components/AloneModal'
-import BouncingWrapper from '@/components/BouncingWrapper'
-import { BouncingPauseProvider } from '@/contexts/BouncingPauseContext'
-import CountdownTimer from '@/components/CountdownTimer'
+import StaticModalWrapper from '@/components/StaticModalWrapper'
+import HeaderContent from '@/components/HeaderContent'
 import ProductsView from '@/components/ProductsView'
-import VintageView from '@/components/VintageView'
 import TickerHeader from '@/components/TickerHeader'
-import CartModal, { CartItem } from '@/components/CartModal'
+import { CartItem } from '@/components/CartModal'
 import { createCheckoutClient } from '@/lib/shopify'
 
-// View modes for the 3-tab navigation
-export type ViewMode = 'offline' | 'shop' | 'vintage'
+// Lazy-load modal components (rendered after 3.7s spotlight delay)
+const BottomLeftModal = dynamic(() => import('@/components/BottomLeftModal'))
+const ImageSlideshowModal = dynamic(() => import('@/components/ImageSlideshowModal'))
+const QAModal = dynamic(() => import('@/components/QAModal'))
+const TopRightModal = dynamic(() => import('@/components/TopRightModal'))
+const AloneModal = dynamic(() => import('@/components/AloneModal'))
+
+// View modes for the 2-tab navigation
+export type ViewMode = 'offline' | 'shop'
 
 const CART_STORAGE_KEY = 'holiday-cart'
 
@@ -49,19 +45,19 @@ export default function Home() {
     fileExtension: string | null
     delaySeconds: number
   } | null>(null)
-  const [showOfflineModal, setShowOfflineModal] = useState(false)
-  const [showCenterModal, setShowCenterModal] = useState(false)
   const [showSlideshowModal, setShowSlideshowModal] = useState(false)
   const [showAnswersModal, setShowAnswersModal] = useState(false)
   const [showProblemsModal, setShowProblemsModal] = useState(false)
-  const [showRamboModal, setShowRamboModal] = useState(false)
   const [showTopRightModal, setShowTopRightModal] = useState(false)
-  const [showLeftSidebar, setShowLeftSidebar] = useState(false)
-  const [showRightSidebar, setShowRightSidebar] = useState(false)
-  const [currentView, setCurrentView] = useState<ViewMode>('shop') // 3-tab navigation
-  const [showCartModal, setShowCartModal] = useState(false) // Cart modal for vintage view
-  const [modalsHidden, setModalsHidden] = useState(false) // Toggle to hide all bouncing modals
-  const [showAloneModal, setShowAloneModal] = useState(false) // "who do you perform for when you're alone?" modal
+  const [showAloneModal, setShowAloneModal] = useState(false)
+  const [modalsVisible, setModalsVisible] = useState(false)
+  const [currentView, setCurrentView] = useState<ViewMode>('shop') // 2-tab navigation
+  const [activeMobileModal, setActiveMobileModal] = useState(0) // Tracks which mobile modal card is in view
+  const mobileScrollRef = useRef<HTMLDivElement>(null)
+  const mobileModalCount = useRef(0)
+  const [activeDesktopModal, setActiveDesktopModal] = useState(0) // Tracks which desktop modal card is in view
+  const desktopScrollRef = useRef<HTMLDivElement>(null)
+  const [desktopModalTotal, setDesktopModalTotal] = useState(0)
 
   // Cart state - lifted from ProductsView to persist across views
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -138,12 +134,6 @@ export default function Home() {
     }
   }, [cartItems])
 
-  // Handle bag icon click - open cart modal on vintage, do nothing on shop (cart is in grid)
-  const handleBagClick = useCallback(() => {
-    if (currentView === 'vintage') {
-      setShowCartModal(true)
-    }
-  }, [currentView])
 
   useEffect(() => {
     // Show logo as spotlight starts to shine
@@ -185,34 +175,98 @@ export default function Home() {
   // Preload right side modals data
   useEffect(() => {
     setShowSlideshowModal(true)
-    setShowCenterModal(true)
     setShowAnswersModal(true)
     setShowProblemsModal(true)
-    setShowRamboModal(true)
     setShowTopRightModal(true)
     setShowAloneModal(true)
   }, [])
 
-  // Show bouncing modals after spotlight completes
+  // Show modal cards after spotlight completes
   useEffect(() => {
     if (!showSpotlight && showContent) {
-      // First set of modals
-      const leftTimer = setTimeout(() => {
-        setShowLeftSidebar(true)
-      }, 1500)
+      const timer = setTimeout(() => {
+        setModalsVisible(true)
+      }, 500)
 
-      // Second set of modals with slight delay
-      const rightTimer = setTimeout(() => {
-        setShowRightSidebar(true)
-      }, 2000)
-
-      return () => {
-        clearTimeout(leftTimer)
-        clearTimeout(rightTimer)
-      }
+      return () => clearTimeout(timer)
     }
   }, [showSpotlight, showContent])
 
+  // Track which mobile modal card is in view via IntersectionObserver
+  useEffect(() => {
+    const container = mobileScrollRef.current
+    if (!container) return
+
+    const cards = container.querySelectorAll('[data-modal-card]')
+    mobileModalCount.current = cards.length
+    if (cards.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number((entry.target as HTMLElement).dataset.modalCard)
+            if (!isNaN(index)) setActiveMobileModal(index)
+          }
+        })
+      },
+      { root: container, threshold: 0.6 }
+    )
+
+    cards.forEach((card) => observer.observe(card))
+    return () => observer.disconnect()
+  })
+
+  // Track which desktop modal card is in view via IntersectionObserver
+  useEffect(() => {
+    const container = desktopScrollRef.current
+    if (!container) return
+
+    const cards = container.querySelectorAll('[data-desktop-card]')
+    setDesktopModalTotal(cards.length)
+    if (cards.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number((entry.target as HTMLElement).dataset.desktopCard)
+            if (!isNaN(index)) setActiveDesktopModal(index)
+          }
+        })
+      },
+      { root: container, threshold: 0.6 }
+    )
+
+    cards.forEach((card) => observer.observe(card))
+    return () => observer.disconnect()
+  })
+
+  // Arrow key navigation for desktop offline modal cards
+  useEffect(() => {
+    if (currentView !== 'offline') return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+
+      // Don't intercept when user is typing in an input
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      const container = desktopScrollRef.current
+      if (!container) return
+
+      e.preventDefault()
+      const scrollAmount = container.clientHeight
+      container.scrollBy({
+        top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
+        behavior: 'smooth'
+      })
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentView])
 
   const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -310,15 +364,22 @@ export default function Home() {
       {/* Ticker Header - waits for spotlight */}
       <TickerHeader showAfterSpotlight={!showSpotlight} />
 
-      {/* Countdown Timer with View Toggle - waits for spotlight */}
-      <CountdownTimer
+      {/* Header Content with View Toggle - waits for spotlight */}
+      <HeaderContent
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={(view) => {
+          setCurrentView(view)
+          if (view === 'offline') {
+            // Reset scroll to first card
+            setTimeout(() => {
+              mobileScrollRef.current?.scrollTo({ left: 0, behavior: 'instant' })
+              desktopScrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+              setActiveMobileModal(0)
+              setActiveDesktopModal(0)
+            }, 50)
+          }
+        }}
         showAfterSpotlight={!showSpotlight}
-        onBagClick={handleBagClick}
-        cartItemCount={cartItems.length}
-        modalsHidden={modalsHidden}
-        onToggleModals={() => setModalsHidden(!modalsHidden)}
       />
 
       {/* Products View (Shop) - Shows when currentView is 'shop' */}
@@ -332,30 +393,6 @@ export default function Home() {
         onCheckout={handleCheckout}
       />
 
-      {/* Vintage View - Shows when currentView is 'vintage' */}
-      <VintageView
-        isVisible={currentView === 'vintage'}
-        showAfterSpotlight={!showSpotlight}
-        cartItems={cartItems}
-        onAddToCart={addToCart}
-      />
-
-      {/* Cart Modal - opens from bag icon on vintage view */}
-      {showCartModal && (
-        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
-            <CartModal
-              title="cart"
-              onClose={() => setShowCartModal(false)}
-              items={cartItems}
-              onUpdateQuantity={updateQuantity}
-              onRemoveItem={removeFromCart}
-              onCheckout={handleCheckout}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Spotlight Effect - Always visible regardless of view */}
       {showSpotlight && (
         <div className='fixed inset-0 z-[100] pointer-events-none'>
@@ -367,309 +404,423 @@ export default function Home() {
 
       {/* Main Home View (Offline) - Shows when currentView is 'offline' */}
       <div
-        className={`transition-opacity duration-500 ${
+        className={`fixed inset-0 pt-[84px] transition-opacity duration-500 ${
           currentView === 'offline' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        {/* Bouncing Modals - Wrapped in provider for global pause coordination */}
-        <BouncingPauseProvider>
-          {/* Bouncing Modals Container - Hidden when modalsHidden is true */}
-          <div
-            className={`transition-opacity duration-300 ${
-              modalsHidden ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
-            }`}
-          >
-          {/* Bouncing Modals - DVD-style animation with different directions to spread out */}
-          {showLeftSidebar && (
-            <>
-              {showDownloadModal && downloadModalData && (
-                <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title={downloadModalData.title}>
-                  <BottomLeftModal
-                    title={downloadModalData.title}
-                    questionText={downloadModalData.questionText}
-                    imageUrl={downloadModalData.fileUrl}
-                    downloadFileName={downloadModalData.downloadFileName}
-                    fileExtension={downloadModalData.fileExtension}
-                    onClose={() => setShowDownloadModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-              {/* {showCenterModal && (
-                <BouncingWrapper speed={1.8} initialDirection="ne" className="z-40" title="click the buttons">
-                  <CenterModal
-                    title='click the buttons'
-                    onClose={() => setShowCenterModal(false)}
-                  />
-                </BouncingWrapper>
-              )} */}
-              {showAnswersModal && (
-                <BouncingWrapper speed={1.3} initialDirection="sw" className="z-40" title="what would you miss tomorrow?">
-                  <AnswersModal
-                    title='what would you miss tomorrow?'
-                    onClose={() => setShowAnswersModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-              {showProblemsModal && (
-                <BouncingWrapper speed={1.5} initialDirection="se" className="z-40" title='what problem do you wish you could solve?'>
-                  <ProblemsModal
-                    title='what problem do you wish you could solve?'
-                    onClose={() => setShowProblemsModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-            </>
-          )}
+          {/* Split Layout: flex-col on mobile, flex-row on desktop */}
+          <div className='flex flex-col md:flex-row w-full h-full'>
 
-          {showRightSidebar && (
-            <>
-              {showTopRightModal && (
-                <BouncingWrapper speed={1.6} initialDirection="nw" className="z-40" title="january 29th">
-                  <TopRightModal
-                    title='january 29th'
-                    onClose={() => setShowTopRightModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-              {showSlideshowModal && (
-                <BouncingWrapper speed={1.4} initialDirection="sw" className="z-40" title="what kept me alive">
-                  <ImageSlideshowModal
-                    title='what kept me alive'
-                    onClose={() => setShowSlideshowModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-              {showRamboModal && (
-                <BouncingWrapper speed={2} initialDirection="ne" className="z-40" title="rambo ($99)">
-                  <RamboModal
-                    title='january 29th limited to 99 pairs ($99)'
-                    onClose={() => setShowRamboModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-              {showAloneModal && (
-                <BouncingWrapper speed={1.4} initialDirection="se" className="z-40" title="who do you perform for when you're alone?">
-                  <AloneModal
-                    title="who do you perform for when you're alone?"
-                    onClose={() => setShowAloneModal(false)}
-                  />
-                </BouncingWrapper>
-              )}
-            </>
-          )}
-          </div>
-        </BouncingPauseProvider>
-
-
-      {/* Main Content Wrapper - Fixed center, not affected by sidebars */}
-      <div className='fixed inset-0 flex flex-col items-center justify-center px-4 py-8 pointer-events-none'>
-        <main className='w-full max-w-2xl flex flex-col items-center justify-center text-center py-8 pt-6 pointer-events-auto'>
-          <div className='flex flex-col items-center justify-center space-y-6 md:space-y-8'>
-            {/* Logo - Responsive sizing */}
-            <div
-              className={`w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] md:w-[500px] md:h-[500px] lg:w-[550px] lg:h-[550px] relative flex-shrink-0 transition-opacity duration-500 ease-in ${
-                showContent ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              <Image
-                src='/h.png'
-                alt='h'
-                fill
-                className='object-contain'
-                priority
-              />
-            </div>
-
-            {/* Q&A and Subscribe Section - Shared Position */}
-            <div
-              className={`w-full max-w-lg relative transition-opacity duration-1200 ease-out ${
-                showContent ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{ transitionDelay: showContent ? '2500ms' : '0ms' }}
-            >
-              {/* Question and Answer Section */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: showSubscribe ? 1 : 0,
-                  pointerEvents: showSubscribe ? 'auto' : 'none'
-                }}
-                transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                className='flex flex-col items-center space-y-6'
-              >
-                <h1 className="text-xs sm:text-sm tracking-widest font-light text-white">
-                  Q: what do you think of when you hear the word "holiday"?
-                </h1>
-
-                <form onSubmit={handleAnswerSubmit} className='w-full max-w-xs'>
-                  {answerSuccess ? (
-                    <p className='text-green-500 text-xs py-2 animate-fade-in'>
-                      Thank you for sharing
-                    </p>
-                  ) : answerError ? (
-                    <p className='text-yellow-500 text-xs py-2 animate-fade-in break-words'>
-                      {answerError}
-                    </p>
-                  ) : (
-                    <div className='relative'>
-                      <input
-                        type='text'
-                        value={answer}
-                        onChange={(e) => setAnswer(e.target.value)}
-                        placeholder='type your answer here'
-                        className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 pl-4 pr-10 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
-                        disabled={isSubmittingAnswer || !showSubscribe}
-                      />
-                      {answer.trim() && showSubscribe && (
-                        <button
-                          type='submit'
-                          disabled={isSubmittingAnswer}
-                          className={`absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-400 transition-all ${
-                            isSubmittingAnswer
-                              ? 'opacity-50 scale-95'
-                              : 'opacity-100 scale-100'
-                          }`}
-                        >
-                          <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            viewBox='0 0 24 24'
-                            fill='currentColor'
-                            className='w-5 h-5'
-                          >
-                            <path d='M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z' />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </form>
-
-                <button
-                  onClick={() => setShowSubscribe(false)}
-                  className="border-b border-gray-600 hover:border-gray-400 transition-colors tracking-widest text-xs sm:text-sm pb-1 text-white"
+            {/* Left/Top Panel — Logo + Q&A + Subscribe */}
+            <div className='h-1/2 md:h-full md:w-1/2 flex flex-col items-center justify-center px-4 py-2 md:py-0 overflow-hidden'>
+              <div className='w-full max-w-md flex flex-col items-center justify-center text-center space-y-3 md:space-y-3'>
+                {/* Logo - Responsive sizing (compact on mobile, larger on desktop) */}
+                <div
+                  className={`w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] md:w-[320px] md:h-[320px] lg:w-[380px] lg:h-[380px] relative flex-shrink-0 transition-opacity duration-500 ease-in md:-mt-8 ${
+                    showContent ? 'opacity-100' : 'opacity-0'
+                  }`}
                 >
-                  subscribe
-                </button>
-              </motion.div>
+                  <Image
+                    src='/h.png'
+                    alt='h'
+                    fill
+                    sizes='(min-width: 1024px) 380px, (min-width: 768px) 320px, (min-width: 640px) 200px, 160px'
+                    className='object-contain'
+                    priority
+                  />
+                </div>
 
-              {/* Subscribe Form - Appears in same position */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: !showSubscribe ? 1 : 0,
-                  pointerEvents: !showSubscribe ? 'auto' : 'none'
-                }}
-                transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                className='absolute inset-0 flex items-center justify-center'
-              >
-                <motion.div
-                  initial={false}
-                  animate={{
-                    backgroundColor: 'transparent',
-                    borderRadius: 12,
-                    padding: !showSubscribe ? 24 : 0,
-                  }}
-                  transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                  className='relative w-full max-w-xs'
+                {/* Q&A and Subscribe Section */}
+                <div
+                  className={`w-full max-w-lg relative transition-opacity duration-1200 ease-out ${
+                    showContent ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  style={{ transitionDelay: showContent ? '2500ms' : '0ms' }}
                 >
-                  <motion.button
+                  {/* Question and Answer Section */}
+                  <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: !showSubscribe ? 1 : 0 }}
-                    transition={{ duration: 0.3, delay: !showSubscribe ? 0.5 : 0 }}
-                    onClick={() => setShowSubscribe(true)}
-                    className="absolute -top-2 -right-2 transition-colors z-10 text-gray-500 hover:text-gray-300"
-                    type='button'
+                    animate={{
+                      opacity: showSubscribe ? 1 : 0,
+                      pointerEvents: showSubscribe ? 'auto' : 'none'
+                    }}
+                    transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                    className='flex flex-col items-center space-y-6'
                   >
-                    <svg
-                      xmlns='http://www.w3.org/2000/svg'
-                      viewBox='0 0 24 24'
-                      fill='currentColor'
-                      className='w-5 h-5'
-                    >
-                      <path
-                        fillRule='evenodd'
-                        d='M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z'
-                        clipRule='evenodd'
-                      />
-                    </svg>
-                  </motion.button>
-                  {subscribeSuccess ? (
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className='text-green-500 text-xs py-2 text-center'
-                    >
-                      successfully subscribed!
-                    </motion.p>
-                  ) : (
-                    <form onSubmit={handleSubscribeSubmit} className='space-y-4'>
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
-                        transition={{ duration: 0.4, delay: !showSubscribe ? 0.15 : 0, ease: [0.25, 0.1, 0.25, 1] }}
-                      >
-                        <input
-                          type='email'
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder='email address'
-                          className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
-                          disabled={isSubmittingSubscribe || showSubscribe}
-                        />
-                      </motion.div>
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
-                        transition={{ duration: 0.4, delay: !showSubscribe ? 0.3 : 0, ease: [0.25, 0.1, 0.25, 1] }}
-                      >
-                        <input
-                          type='tel'
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder='phone number'
-                          className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
-                          disabled={isSubmittingSubscribe || showSubscribe}
-                        />
-                      </motion.div>
-                      {subscribeError && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className='text-yellow-500 text-xs text-center'
-                        >
-                          {subscribeError}
-                        </motion.p>
-                      )}
-                      <motion.button
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
-                        transition={{ duration: 0.4, delay: !showSubscribe ? 0.45 : 0, ease: [0.25, 0.1, 0.25, 1] }}
-                        type='submit'
-                        disabled={isSubmittingSubscribe || showSubscribe}
-                        className='w-full text-blue-500 hover:text-blue-400 transition-colors tracking-widest text-xs disabled:opacity-50'
-                      >
-                        {isSubmittingSubscribe ? 'sending...' : 'submit'}
-                      </motion.button>
-                    </form>
-                  )}
-                </motion.div>
-              </motion.div>
-            </div>
-          </div>
+                    <h1 className="text-xs sm:text-sm tracking-widest font-light text-white">
+                      Q: what do you think of when you hear the word &quot;holiday&quot;?
+                    </h1>
 
-          {/* Footer - closer to bottom
-        <div className='mt-auto pb-4'>
-          <p
-            className={`text-gray-600 text-xs tracking-wider transition-opacity duration-1000 ${
-              showContent ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{ transitionDelay: showContent ? '1200ms' : '0ms' }}
-          >
-            holiday is offline
-          </p>
-        </div> */}
-        </main>
-      </div>
+                    <form onSubmit={handleAnswerSubmit} className='w-full max-w-xs'>
+                      {answerSuccess ? (
+                        <p className='text-green-500 text-xs py-2 animate-fade-in'>
+                          Thank you for sharing
+                        </p>
+                      ) : answerError ? (
+                        <p className='text-yellow-500 text-xs py-2 animate-fade-in break-words'>
+                          {answerError}
+                        </p>
+                      ) : (
+                        <div className='relative'>
+                          <input
+                            type='text'
+                            value={answer}
+                            onChange={(e) => setAnswer(e.target.value)}
+                            placeholder='type your answer here'
+                            className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 pl-4 pr-10 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
+                            disabled={isSubmittingAnswer || !showSubscribe}
+                          />
+                          {answer.trim() && showSubscribe && (
+                            <button
+                              type='submit'
+                              disabled={isSubmittingAnswer}
+                              className={`absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-400 transition-all ${
+                                isSubmittingAnswer
+                                  ? 'opacity-50 scale-95'
+                                  : 'opacity-100 scale-100'
+                              }`}
+                            >
+                              <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                viewBox='0 0 24 24'
+                                fill='none'
+                                stroke='currentColor'
+                                strokeWidth='1.5'
+                                className='w-5 h-5'
+                              >
+                                <line x1='5' y1='12' x2='19' y2='12' />
+                                <polyline points='13,6 19,12 13,18' />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </form>
+
+                    <button
+                      onClick={() => setShowSubscribe(false)}
+                      className="border-b border-gray-600 hover:border-gray-400 transition-colors tracking-widest text-xs sm:text-sm pb-1 text-white"
+                    >
+                      subscribe
+                    </button>
+                  </motion.div>
+
+                  {/* Subscribe Form - Appears in same position */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: !showSubscribe ? 1 : 0,
+                      pointerEvents: !showSubscribe ? 'auto' : 'none'
+                    }}
+                    transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                    className='absolute inset-0 flex items-center justify-center'
+                  >
+                    <motion.div
+                      initial={false}
+                      animate={{
+                        backgroundColor: 'transparent',
+                        borderRadius: 12,
+                        padding: !showSubscribe ? 24 : 0,
+                      }}
+                      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                      className='relative w-full max-w-xs'
+                    >
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: !showSubscribe ? 1 : 0 }}
+                        transition={{ duration: 0.3, delay: !showSubscribe ? 0.5 : 0 }}
+                        onClick={() => setShowSubscribe(true)}
+                        className="absolute -top-2 -right-2 transition-colors z-10 text-gray-500 hover:text-gray-300"
+                        type='button'
+                      >
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          viewBox='0 0 24 24'
+                          fill='currentColor'
+                          className='w-5 h-5'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z'
+                            clipRule='evenodd'
+                          />
+                        </svg>
+                      </motion.button>
+                      {subscribeSuccess ? (
+                        <motion.p
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className='text-green-500 text-xs py-2 text-center'
+                        >
+                          successfully subscribed!
+                        </motion.p>
+                      ) : (
+                        <form onSubmit={handleSubscribeSubmit} className='space-y-4'>
+                          <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
+                            transition={{ duration: 0.4, delay: !showSubscribe ? 0.15 : 0, ease: [0.25, 0.1, 0.25, 1] }}
+                          >
+                            <input
+                              type='email'
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              placeholder='email address'
+                              className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
+                              disabled={isSubmittingSubscribe || showSubscribe}
+                            />
+                          </motion.div>
+                          <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
+                            transition={{ duration: 0.4, delay: !showSubscribe ? 0.3 : 0, ease: [0.25, 0.1, 0.25, 1] }}
+                          >
+                            <input
+                              type='tel'
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                              placeholder='phone number'
+                              className="w-full bg-transparent border-b border-gray-600 text-white text-center py-2 px-4 text-xs focus:outline-none focus:border-gray-400 placeholder:tracking-widest placeholder:text-xs placeholder:text-gray-600"
+                              disabled={isSubmittingSubscribe || showSubscribe}
+                            />
+                          </motion.div>
+                          {subscribeError && (
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className='text-yellow-500 text-xs text-center'
+                            >
+                              {subscribeError}
+                            </motion.p>
+                          )}
+                          <motion.button
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: !showSubscribe ? 1 : 0, y: !showSubscribe ? 0 : 12 }}
+                            transition={{ duration: 0.4, delay: !showSubscribe ? 0.45 : 0, ease: [0.25, 0.1, 0.25, 1] }}
+                            type='submit'
+                            disabled={isSubmittingSubscribe || showSubscribe}
+                            className='w-full text-blue-500 hover:text-blue-400 transition-colors tracking-widest text-xs disabled:opacity-50'
+                          >
+                            {isSubmittingSubscribe ? 'sending...' : 'submit'}
+                          </motion.button>
+                        </form>
+                      )}
+                    </motion.div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right/Bottom Panel — Static Modal Cards */}
+            <div
+              className={`h-1/2 md:h-full md:w-1/2 transition-opacity duration-500 ${
+                !modalsVisible ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+              }`}
+            >
+              {/* Mobile: smooth snap scroll, one card at a time + dot tracker */}
+              <div className='md:hidden h-full flex flex-col'>
+                <div ref={mobileScrollRef} className='flex-1 flex items-center overflow-x-auto scrollbar-none scroll-smooth px-[2vw]' style={{ WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}>
+                  {(() => {
+                    let cardIndex = 0
+                    return (
+                      <>
+                        {showDownloadModal && downloadModalData && (
+                          <div data-modal-card={cardIndex++} className='w-[96vw] flex-shrink-0 flex items-center justify-center px-3' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-full max-w-[340px]'>
+                              <BottomLeftModal
+                                title={downloadModalData.title}
+                                questionText={downloadModalData.questionText}
+                                imageUrl={downloadModalData.fileUrl}
+                                downloadFileName={downloadModalData.downloadFileName}
+                                fileExtension={downloadModalData.fileExtension}
+                                onClose={() => setShowDownloadModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showAnswersModal && (
+                          <div data-modal-card={cardIndex++} className='w-[96vw] flex-shrink-0 flex items-center justify-center px-3' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-full max-w-[340px]'>
+                              <QAModal
+                                title='what would you miss tomorrow?'
+                                apiEndpoint='/api/answers'
+                                watchUrl='https://youtu.be/I6zromBJVPU?si=ISmJvaQL9sTCcz2P'
+                                onClose={() => setShowAnswersModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showProblemsModal && (
+                          <div data-modal-card={cardIndex++} className='w-[96vw] flex-shrink-0 flex items-center justify-center px-3' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-full max-w-[340px]'>
+                              <QAModal
+                                title='what problem do you wish you could solve?'
+                                apiEndpoint='/api/problems'
+                                watchUrl='https://youtu.be/TVAQx8phmjk?si=9izgaAKGviClJoM5'
+                                onClose={() => setShowProblemsModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showTopRightModal && (
+                          <div data-modal-card={cardIndex++} className='w-[96vw] flex-shrink-0 flex items-center justify-center px-3' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-full max-w-[340px]'>
+                              <TopRightModal
+                                title='january 29th'
+                                onClose={() => setShowTopRightModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showSlideshowModal && (
+                          <div data-modal-card={cardIndex++} className='w-[96vw] flex-shrink-0 flex items-center justify-center px-3' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-full max-w-[340px]'>
+                              <ImageSlideshowModal
+                                title='what kept me alive'
+                                onClose={() => setShowSlideshowModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showAloneModal && (
+                          <div data-modal-card={cardIndex++} className='w-[96vw] flex-shrink-0 flex items-center justify-center px-3' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-full max-w-[340px]'>
+                              <AloneModal
+                                title="who do you perform for when you're alone?"
+                                onClose={() => setShowAloneModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+                {/* Swipe label (mobile only) */}
+                <p
+                  className='text-white/50 text-base tracking-[0.25em] text-center pt-3 lowercase'
+                  style={{ fontFamily: "'Holiday Content', sans-serif" }}
+                >
+                  swipe
+                </p>
+                {/* Dot tracker */}
+                <div className='flex items-center justify-center gap-1 pb-3 pt-1'>
+                  {Array.from({ length: mobileScrollRef.current?.querySelectorAll('[data-modal-card]').length || mobileModalCount.current }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1 transition-all duration-300 ${
+                        i === activeMobileModal ? 'bg-white w-2.5' : 'bg-white/25 w-1'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop: vertical snap scroll with tracker */}
+              <div className='hidden md:flex h-full items-center'>
+                {/* Scroll area */}
+                <div ref={desktopScrollRef} className='flex-1 h-full flex flex-col items-center overflow-y-auto px-4 scrollbar-none scroll-smooth' style={{ scrollSnapType: 'y mandatory' }}>
+                  {(() => {
+                    let desktopCardIndex = 0
+                    return (
+                      <>
+                        {showDownloadModal && downloadModalData && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <BottomLeftModal
+                                title={downloadModalData.title}
+                                questionText={downloadModalData.questionText}
+                                imageUrl={downloadModalData.fileUrl}
+                                downloadFileName={downloadModalData.downloadFileName}
+                                fileExtension={downloadModalData.fileExtension}
+                                onClose={() => setShowDownloadModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showAnswersModal && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <QAModal
+                                title='what would you miss tomorrow?'
+                                apiEndpoint='/api/answers'
+                                watchUrl='https://youtu.be/I6zromBJVPU?si=ISmJvaQL9sTCcz2P'
+                                onClose={() => setShowAnswersModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showProblemsModal && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <QAModal
+                                title='what problem do you wish you could solve?'
+                                apiEndpoint='/api/problems'
+                                watchUrl='https://youtu.be/TVAQx8phmjk?si=9izgaAKGviClJoM5'
+                                onClose={() => setShowProblemsModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showTopRightModal && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <TopRightModal
+                                title='january 29th'
+                                onClose={() => setShowTopRightModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showSlideshowModal && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <ImageSlideshowModal
+                                title='what kept me alive'
+                                onClose={() => setShowSlideshowModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showAloneModal && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <AloneModal
+                                title="who do you perform for when you're alone?"
+                                onClose={() => setShowAloneModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+                {/* Vertical tracker + scroll label */}
+                {desktopModalTotal > 0 && (
+                  <div className='flex items-center gap-3 pr-4 flex-shrink-0'>
+                    <p
+                      className='text-white/50 text-2xl tracking-[0.25em] lowercase'
+                      style={{ fontFamily: "'Holiday Content', sans-serif", writingMode: 'vertical-rl' }}
+                    >
+                      scroll
+                    </p>
+                    <div className='flex flex-col items-center gap-1'>
+                      {Array.from({ length: desktopModalTotal }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1 transition-all duration-300 ${
+                            i === activeDesktopModal ? 'bg-white h-2.5' : 'bg-white/25 h-1'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
       </div>
       {/* End of Main Home View wrapper */}
 

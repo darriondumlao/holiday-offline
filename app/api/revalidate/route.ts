@@ -10,8 +10,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Revalidate the ticker API route
+    // Revalidate all cached API routes
     revalidatePath('/api/ticker')
+    revalidatePath('/api/site-audio')
+    revalidatePath('/api/downloadable-content')
+    revalidatePath('/api/slideshow')
 
     return NextResponse.json({ revalidated: true, now: Date.now() })
   } catch (error) {

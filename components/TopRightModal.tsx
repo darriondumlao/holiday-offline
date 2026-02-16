@@ -21,11 +21,12 @@ export default function TopRightModal({ onClose, title = 'january 29th' }: TopRi
         { label: 'watch', onClick: handleWatch },
       ]}
     >
-      <div className='relative w-full h-[180px]'>
+      <div className='relative w-full h-[140px] md:h-[180px]'>
         <Image
           src='/IMG_0316.jpeg'
           alt='January 29th - Holiday 9 Year Anniversary'
           fill
+          sizes='360px'
           className='object-contain'
         />
       </div>

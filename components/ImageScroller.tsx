@@ -54,7 +54,7 @@ export default function ImageScroller({ images, alt = 'Product image', className
   }
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div className={`relative w-full h-full overflow-hidden ${className}`}>
       {/* Image Container */}
       <div
         ref={scrollRef}
@@ -84,24 +84,24 @@ export default function ImageScroller({ images, alt = 'Product image', className
           <button
             onClick={goToPrev}
             disabled={currentIndex === 0}
-            className={`absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full transition-all ${
+            className={`absolute left-1 top-1/2 -translate-y-1/2 text-white p-1 hover:opacity-70 transition-all ${
               currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:scale-110'
             }`}
             aria-label='Previous image'
           >
-            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' className='w-4 h-4'>
+            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' className='w-5 h-5'>
               <path fillRule='evenodd' d='M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z' clipRule='evenodd' />
             </svg>
           </button>
           <button
             onClick={goToNext}
             disabled={currentIndex === images.length - 1}
-            className={`absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full transition-all ${
+            className={`absolute right-1 top-1/2 -translate-y-1/2 text-white p-1 hover:opacity-70 transition-all ${
               currentIndex === images.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:scale-110'
             }`}
             aria-label='Next image'
           >
-            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' className='w-4 h-4'>
+            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' className='w-5 h-5'>
               <path fillRule='evenodd' d='M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z' clipRule='evenodd' />
             </svg>
           </button>

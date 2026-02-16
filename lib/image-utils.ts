@@ -63,22 +63,3 @@ export function getOptimizedImageUrl(
   }
 }
 
-/**
- * Get srcSet for responsive images with Shopify CDN
- *
- * @param url - Original Shopify image URL
- * @param widths - Array of widths to generate
- * @returns srcSet string for responsive images
- */
-export function getResponsiveSrcSet(
-  url: string,
-  widths: number[] = [280, 360, 560, 720, 1080]
-): string {
-  if (!url || !url.includes('cdn.shopify.com')) {
-    return ''
-  }
-
-  return widths
-    .map(w => `${getOptimizedImageUrl(url, { width: w })} ${w}w`)
-    .join(', ')
-}

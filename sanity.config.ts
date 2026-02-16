@@ -1,6 +1,5 @@
 import { defineConfig } from 'sanity'
 import { structureTool } from 'sanity/structure'
-import { StartDropAction } from './sanity/actions/startDropAction'
 
 export default defineConfig({
   name: 'default',
@@ -9,15 +8,6 @@ export default defineConfig({
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
   basePath: '/studio',
   plugins: [structureTool()],
-  document: {
-    actions: (prev, context) => {
-      // Add StartDropAction for limitedDrop documents
-      if (context.schemaType === 'limitedDrop') {
-        return [StartDropAction, ...prev]
-      }
-      return prev
-    },
-  },
   schema: {
     types: [
       {
@@ -121,55 +111,6 @@ export default defineConfig({
               title: title,
               subtitle: subtitle ? '✓ Active' : '✗ Inactive',
               media: media,
-            }
-          },
-        },
-      },
-      {
-        name: 'limitedDrop',
-        title: 'Limited Drop Timer',
-        type: 'document',
-        fields: [
-          {
-            name: 'dropName',
-            title: 'Drop Name',
-            type: 'string',
-            description: 'Name for this limited drop (e.g., "Winter 2025 Drop")',
-            validation: (Rule) => Rule.required(),
-          },
-          {
-            name: 'isActive',
-            title: 'Drop Active',
-            type: 'boolean',
-            description: 'Is this drop currently active? Toggle on and click "Start Drop Now" to begin the 15-minute countdown.',
-            initialValue: false,
-          },
-          {
-            name: 'startedAt',
-            title: 'Drop Started At',
-            type: 'datetime',
-            description: 'When the drop countdown started. Click "Start Drop Now" button to set this automatically.',
-            readOnly: true,
-          },
-        ],
-        preview: {
-          select: {
-            title: 'dropName',
-            isActive: 'isActive',
-            startedAt: 'startedAt',
-          },
-          prepare(selection) {
-            const { title, isActive, startedAt } = selection
-            const hasStarted = !!startedAt
-            let subtitle = 'Inactive'
-            if (isActive && hasStarted) {
-              subtitle = '🔥 LIVE - Timer Running'
-            } else if (isActive && !hasStarted) {
-              subtitle = '⏸ Active - Click "Start Drop Now"'
-            }
-            return {
-              title: title,
-              subtitle: subtitle,
             }
           },
         },

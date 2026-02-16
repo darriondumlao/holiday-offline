@@ -127,7 +127,7 @@ export default function ProductDetailsLightbox({
                   e.stopPropagation()
                   prevImage()
                 }}
-                className='absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 active:scale-95 transition-all p-2 md:p-3 rounded-full'
+                className='absolute left-2 md:left-4 top-1/2 -translate-y-1/2 hover:opacity-70 active:scale-95 transition-all p-1'
                 aria-label='Previous image'
               >
                 <svg
@@ -150,7 +150,7 @@ export default function ProductDetailsLightbox({
                   e.stopPropagation()
                   nextImage()
                 }}
-                className='absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 active:scale-95 transition-all p-2 md:p-3 rounded-full'
+                className='absolute right-2 md:right-4 top-1/2 -translate-y-1/2 hover:opacity-70 active:scale-95 transition-all p-1'
                 aria-label='Next image'
               >
                 <svg
@@ -166,16 +166,18 @@ export default function ProductDetailsLightbox({
                   />
                 </svg>
               </button>
-
-              {/* Image Counter */}
-              <div className='absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/20 px-3 py-1.5 rounded-full'>
-                <span className='text-white text-sm font-medium'>
-                  {currentIndex + 1} / {images.length}
-                </span>
-              </div>
             </>
           )}
         </div>
+
+        {/* Image Counter - below the image with spacing */}
+        {images.length > 1 && (
+          <div className='mt-4'>
+            <span className='text-white/50 text-xs font-medium tracking-wide'>
+              {currentIndex + 1} / {images.length}
+            </span>
+          </div>
+        )}
 
         {/* Description Area */}
         {description && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 
 export interface CartItem {
   id: string
@@ -32,10 +32,6 @@ export default function CartModal({
   onCheckout,
   isMobileEmbedded = false
 }: CartModalProps) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const headerRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const footerRef = useRef<HTMLDivElement>(null)
   const bellAudioRef = useRef<HTMLAudioElement | null>(null)
   const [isBellPlaying, setIsBellPlaying] = useState(false)
 
@@ -60,16 +56,6 @@ export default function CartModal({
     }
   }
 
-  useEffect(() => {
-    if (cardRef.current) {
-      console.log(`[CartModal]`)
-      console.log(`  Total height: ${cardRef.current.offsetHeight}px`)
-      console.log(`  Header: ${headerRef.current?.offsetHeight}px`)
-      console.log(`  Content: ${contentRef.current?.offsetHeight}px`)
-      console.log(`  Footer: ${footerRef.current?.offsetHeight}px`)
-    }
-  }, [])
-
   const handleCheckout = () => {
     // If cart is empty, just play the bell sound
     if (items.length === 0) {
@@ -90,10 +76,9 @@ export default function CartModal({
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   return (
-    <div ref={cardRef} className={`w-full select-none ${isMobileEmbedded ? 'overflow-hidden bg-black rounded-sm' : ''}`}>
+    <div className={`w-full select-none ${isMobileEmbedded ? 'overflow-hidden bg-black rounded-sm' : ''}`}>
       {/* Header - matches ProductCard header */}
       <div
-        ref={headerRef}
         className='relative rounded-t-sm bg-cover bg-center overflow-hidden'
         style={{ backgroundImage: 'url(/swingers-1.png)' }}
       >
@@ -133,7 +118,7 @@ export default function CartModal({
       </div>
 
       {/* Content Area - Mobile: matches MobileProductCard (280px image + 24px see details = 304px), Desktop: 248px */}
-      <div ref={contentRef} className='h-[304px] md:h-[248px] flex flex-col bg-white'>
+      <div className='h-[304px] md:h-[248px] flex flex-col bg-white'>
         {/* Cart Items - Scrollable area */}
         <div className='flex-1 px-4 py-2 overflow-y-auto scrollbar-hide'>
           {items.length === 0 ? (
@@ -220,7 +205,7 @@ export default function CartModal({
       </div>
 
       {/* Footer - matches ProductCard footer with checkout button */}
-      <div ref={footerRef} className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
+      <div className='relative rounded-b-sm bg-cover bg-center overflow-hidden' style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         {/* Dark overlay to dim the pattern */}
         <div className='absolute inset-0 bg-black/40' />
         <div className='relative px-2 py-2 flex justify-center'>

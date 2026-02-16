@@ -21,6 +21,7 @@ export default function ModalWrapper({
   buttons = [],
 }: ModalWrapperProps) {
   const [isVisible, setIsVisible] = useState(false)
+  const [isShaking, setIsShaking] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -30,24 +31,23 @@ export default function ModalWrapper({
   }, [])
 
   const handleClose = () => {
-    setIsVisible(false)
-    setTimeout(() => {
-      onClose()
-    }, 300)
+    if (isShaking) return
+    setIsShaking(true)
+    setTimeout(() => setIsShaking(false), 500)
   }
 
   return (
     <div
       className={`w-full select-none transform transition-all duration-500 ${
         isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-      }`}
+      } ${isShaking ? 'animate-shake' : ''}`}
     >
       {/* Blue Header */}
-      <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm'>
-        <h2 className='text-white font-bold text-sm lowercase'>{title}</h2>
+      <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm overflow-hidden' style={{ containerType: 'inline-size' }}>
+        <h2 className='text-white font-bold lowercase whitespace-nowrap mr-4 min-w-0' style={{ fontSize: 'clamp(7px, 4.5cqw, 14px)' }}>{title}</h2>
         <button
           onClick={handleClose}
-          className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer'
+          className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer flex-shrink-0'
           aria-label='Close'
         >
           <svg
