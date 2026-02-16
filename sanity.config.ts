@@ -245,6 +245,121 @@ export default defineConfig({
           },
         },
       },
+      {
+        name: 'photoBoothOverlay',
+        title: 'Photo Booth Overlay',
+        type: 'document',
+        fields: [
+          {
+            name: 'name',
+            title: 'Overlay Name',
+            type: 'string',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'overlayImage',
+            title: 'Overlay Image (PNG with transparency)',
+            type: 'image',
+            description: 'Upload a transparent PNG at 900x1200 (3:4 portrait). Transparent areas will show the camera feed through.',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'isActive',
+            title: 'Active',
+            type: 'boolean',
+            description: 'Only active overlays will be available in the photo booth',
+            initialValue: true,
+          },
+          {
+            name: 'order',
+            title: 'Display Order',
+            type: 'number',
+            description: 'Lower numbers appear first',
+            initialValue: 0,
+          },
+        ],
+        preview: {
+          select: {
+            title: 'name',
+            subtitle: 'isActive',
+            media: 'overlayImage',
+          },
+          prepare(selection) {
+            const { title, subtitle, media } = selection
+            return {
+              title: title,
+              subtitle: subtitle ? '✓ Active' : '✗ Inactive',
+              media: media,
+            }
+          },
+        },
+      },
+      {
+        name: 'yearbookPhoto',
+        title: 'Yearbook Photo',
+        type: 'document',
+        fields: [
+          {
+            name: 'photo',
+            title: 'Photo',
+            type: 'image',
+            validation: (Rule) => Rule.required(),
+          },
+          {
+            name: 'name',
+            title: 'Submitter Name',
+            type: 'string',
+            description: 'Optional name provided by the submitter',
+          },
+          {
+            name: 'approved',
+            title: 'Approved',
+            type: 'boolean',
+            description: 'Photo must be approved before appearing in the public yearbook',
+            initialValue: false,
+          },
+          {
+            name: 'submittedAt',
+            title: 'Submitted At',
+            type: 'datetime',
+            readOnly: true,
+          },
+        ],
+        orderings: [
+          {
+            title: 'Newest First',
+            name: 'submittedAtDesc',
+            by: [{ field: 'submittedAt', direction: 'desc' }],
+          },
+          {
+            title: 'Pending Review',
+            name: 'approvedAsc',
+            by: [
+              { field: 'approved', direction: 'asc' },
+              { field: 'submittedAt', direction: 'desc' },
+            ],
+          },
+        ],
+        preview: {
+          select: {
+            title: 'name',
+            approved: 'approved',
+            media: 'photo',
+            submittedAt: 'submittedAt',
+          },
+          prepare(selection) {
+            const { title, approved, media, submittedAt } = selection
+            const date = submittedAt
+              ? new Date(submittedAt).toLocaleDateString()
+              : ''
+            return {
+              title: title || 'Anonymous',
+              subtitle: `${approved ? '✓ Approved' : '✗ Pending'} - ${date}`,
+              media: media,
+            }
+          },
+        },
+      },
     ],
   },
 })

@@ -11,6 +11,7 @@ import ImageSlideshowModal from '@/components/ImageSlideshowModal'
 import AnswersModal from '@/components/AnswersModal'
 import ProblemsModal from '@/components/ProblemsModal'
 import RamboModal from '@/components/RamboModal'
+import PhotoBoothModal from '@/components/PhotoBoothModal'
 import TopRightModal from '@/components/TopRightModal'
 import BouncingWrapper from '@/components/BouncingWrapper'
 import { BouncingPauseProvider } from '@/contexts/BouncingPauseContext'
@@ -60,6 +61,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<ViewMode>('shop') // 3-tab navigation
   const [showCartModal, setShowCartModal] = useState(false) // Cart modal for vintage view
   const [modalsHidden, setModalsHidden] = useState(false) // Toggle to hide all bouncing modals
+  const [showPhotoBoothModal, setShowPhotoBoothModal] = useState(false) // Photo booth bouncing modal
 
   // Cart state - lifted from ProductsView to persist across views
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -188,6 +190,7 @@ export default function Home() {
     setShowProblemsModal(true)
     setShowRamboModal(true)
     setShowTopRightModal(true)
+    setShowPhotoBoothModal(true)
   }, [])
 
   // Show bouncing modals after spotlight completes
@@ -441,6 +444,14 @@ export default function Home() {
                   <RamboModal
                     title='january 29th limited to 99 pairs ($99)'
                     onClose={() => setShowRamboModal(false)}
+                  />
+                </BouncingWrapper>
+              )}
+              {showPhotoBoothModal && (
+                <BouncingWrapper speed={1.7} initialDirection="nw" className="z-40" title="photo booth">
+                  <PhotoBoothModal
+                    title='photo booth'
+                    onClose={() => setShowPhotoBoothModal(false)}
                   />
                 </BouncingWrapper>
               )}

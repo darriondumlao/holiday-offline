@@ -370,3 +370,54 @@ export async function getActiveSiteAudio(): Promise<SiteAudio | null> {
   )
   return results || null
 }
+
+// Photo Booth Overlay Interface
+export interface PhotoBoothOverlay {
+  _id: string
+  name: string
+  imageUrl: string
+  order: number
+}
+
+// Yearbook Photo Interface
+export interface YearbookPhoto {
+  _id: string
+  name: string | null
+  imageUrl: string
+  submittedAt: string
+}
+
+// Get active photo booth overlays
+export async function getActiveOverlays(): Promise<PhotoBoothOverlay[]> {
+  return sanityClient.fetch(
+    `*[_type == "photoBoothOverlay" && isActive == true] | order(order asc) {
+      _id,
+      name,
+      "imageUrl": overlayImage.asset->url,
+      order
+    }`
+  )
+}
+
+// Get approved yearbook photos with pagination
+export async function getApprovedYearbookPhotos(
+  start: number = 0,
+  end: number = 20
+): Promise<YearbookPhoto[]> {
+  return sanityClient.fetch(
+    `*[_type == "yearbookPhoto" && approved == true] | order(submittedAt desc) [$start...$end] {
+      _id,
+      name,
+      "imageUrl": photo.asset->url,
+      submittedAt
+    }`,
+    { start, end }
+  )
+}
+
+// Get count of approved yearbook photos
+export async function getApprovedYearbookCount(): Promise<number> {
+  return sanityClient.fetch(
+    `count(*[_type == "yearbookPhoto" && approved == true])`
+  )
+}
