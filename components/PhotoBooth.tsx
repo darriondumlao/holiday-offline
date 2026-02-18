@@ -12,16 +12,16 @@ interface PhotoBoothProps {
 
 type BoothPhase = 'camera' | 'countdown' | 'review' | 'upload-success'
 
-// Canvas dimensions (3:4 portrait)
-const CANVAS_WIDTH = 900
-const CANVAS_HEIGHT = 1200
+// Canvas dimensions (1:1 square to match overlay)
+const CANVAS_WIDTH = 720
+const CANVAS_HEIGHT = 720
 
 export default function PhotoBooth({ onClose }: PhotoBoothProps) {
   const [phase, setPhase] = useState<BoothPhase>('camera')
   const [countdownNumber, setCountdownNumber] = useState(3)
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null)
   const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null)
-  const [selectedOverlayIndex, setSelectedOverlayIndex] = useState<number>(-1) // -1 = no overlay
+  const selectedOverlayIndex = 0 // Always use the first overlay
   const [consentChecked, setConsentChecked] = useState(false)
   const [uploaderName, setUploaderName] = useState('')
   const [uploadError, setUploadError] = useState('')
@@ -286,7 +286,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
         {/* Camera Error State */}
         {cameraError && phase === 'camera' && (
-          <div className="w-full aspect-[3/4] bg-gray-900 rounded border-2 border-gray-700 flex flex-col items-center justify-center gap-4 p-6">
+          <div className="w-full aspect-square bg-gray-900 rounded border-2 border-gray-700 flex flex-col items-center justify-center gap-4 p-6">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -312,7 +312,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
         {/* Camera Loading State */}
         {cameraLoading && !cameraError && phase === 'camera' && (
-          <div className="w-full aspect-[3/4] bg-gray-900 rounded border-2 border-gray-700 flex items-center justify-center">
+          <div className="w-full aspect-square bg-gray-900 rounded border-2 border-gray-700 flex items-center justify-center">
             <p className="text-gray-400 text-sm">starting camera...</p>
           </div>
         )}
@@ -321,7 +321,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
         {(phase === 'camera' || phase === 'countdown') && !cameraError && (
           <>
             {/* Viewfinder */}
-            <div className="relative w-full aspect-[3/4] bg-black rounded overflow-hidden border-2 border-white/20">
+            <div className="relative w-full aspect-square bg-black rounded overflow-hidden border-2 border-white/20">
               <video
                 ref={videoRef}
                 autoPlay
@@ -361,44 +361,6 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 )}
               </AnimatePresence>
             </div>
-
-            {/* Overlay selector */}
-            {!overlaysLoading && overlays.length > 0 && phase === 'camera' && (
-              <div className="w-full">
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-                  {/* No overlay option */}
-                  <button
-                    onClick={() => setSelectedOverlayIndex(-1)}
-                    className={`flex-shrink-0 w-14 h-14 rounded border-2 flex items-center justify-center text-xs transition-all ${
-                      selectedOverlayIndex === -1
-                        ? 'border-blue-500 bg-blue-500/20 text-white'
-                        : 'border-gray-600 bg-gray-800 text-gray-400 hover:border-gray-400'
-                    }`}
-                  >
-                    none
-                  </button>
-
-                  {/* Overlay thumbnails */}
-                  {overlays.map((overlay, index) => (
-                    <button
-                      key={overlay._id}
-                      onClick={() => setSelectedOverlayIndex(index)}
-                      className={`flex-shrink-0 w-14 h-14 rounded border-2 overflow-hidden transition-all ${
-                        selectedOverlayIndex === index
-                          ? 'border-blue-500 ring-1 ring-blue-500'
-                          : 'border-gray-600 hover:border-gray-400'
-                      }`}
-                    >
-                      <img
-                        src={overlay.imageUrl}
-                        alt={overlay.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Camera controls */}
             {phase === 'camera' && !cameraLoading && (
@@ -447,7 +409,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
         {phase === 'review' && capturedDataUrl && (
           <>
             {/* Captured image */}
-            <div className="relative w-full aspect-[3/4] bg-black rounded overflow-hidden border-2 border-white/20">
+            <div className="relative w-full aspect-square bg-black rounded overflow-hidden border-2 border-white/20">
               <img
                 src={capturedDataUrl}
                 alt="Your photo"
@@ -471,7 +433,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
               </button>
             </div>
 
-            {/* Upload to yearbook section */}
+            {/* Upload to yearbook section — temporarily disabled
             {!showUploadForm ? (
               <button
                 onClick={() => setShowUploadForm(true)}
@@ -486,7 +448,6 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 transition={{ duration: 0.3 }}
                 className="w-full space-y-3 bg-gray-900 border border-gray-700 rounded p-4"
               >
-                {/* Name input */}
                 <input
                   type="text"
                   value={uploaderName}
@@ -494,8 +455,6 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                   placeholder="your name (optional)"
                   className="w-full bg-transparent border-b border-gray-600 text-white text-sm py-2 focus:outline-none focus:border-gray-400 placeholder:text-gray-600"
                 />
-
-                {/* Consent checkbox */}
                 <label className="flex items-start gap-2 text-xs text-gray-400 cursor-pointer">
                   <input
                     type="checkbox"
@@ -508,13 +467,9 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                     yearbook gallery. Photos cannot be removed after submission.
                   </span>
                 </label>
-
-                {/* Upload error */}
                 {uploadError && (
                   <p className="text-yellow-500 text-xs">{uploadError}</p>
                 )}
-
-                {/* Upload button */}
                 <button
                   onClick={handleUpload}
                   disabled={!consentChecked || isUploading}
@@ -524,6 +479,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 </button>
               </motion.div>
             )}
+            */}
           </>
         )}
 
