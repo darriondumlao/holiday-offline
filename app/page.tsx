@@ -17,6 +17,7 @@ const ImageSlideshowModal = dynamic(() => import('@/components/ImageSlideshowMod
 const QAModal = dynamic(() => import('@/components/QAModal'))
 const TopRightModal = dynamic(() => import('@/components/TopRightModal'))
 const AloneModal = dynamic(() => import('@/components/AloneModal'))
+const PhotoBoothModal = dynamic(() => import('@/components/PhotoBoothModal'))
 
 // View modes for the 2-tab navigation
 export type ViewMode = 'offline' | 'shop'
@@ -50,6 +51,7 @@ export default function Home() {
   const [showProblemsModal, setShowProblemsModal] = useState(false)
   const [showTopRightModal, setShowTopRightModal] = useState(false)
   const [showAloneModal, setShowAloneModal] = useState(false)
+  const [showPhotoBoothModal, setShowPhotoBoothModal] = useState(false)
   const [currentView, setCurrentView] = useState<ViewMode>('shop') // 2-tab navigation
   const [activeMobileModal, setActiveMobileModal] = useState(0) // Tracks which mobile modal card is in view
   const mobileScrollRef = useRef<HTMLDivElement>(null)
@@ -173,6 +175,7 @@ export default function Home() {
     setShowProblemsModal(true)
     setShowTopRightModal(true)
     setShowAloneModal(true)
+    setShowPhotoBoothModal(true)
   }, [])
 
   // Track which mobile modal card is in view via IntersectionObserver
@@ -891,6 +894,15 @@ export default function Home() {
                       </StaticModalWrapper>
                     </div>
                   )}
+                  {showPhotoBoothModal && (
+                    <div className='w-full'>
+                      <StaticModalWrapper className='w-full'>
+                        <PhotoBoothModal
+                          onClose={() => setShowPhotoBoothModal(false)}
+                        />
+                      </StaticModalWrapper>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -966,6 +978,15 @@ export default function Home() {
                               <AloneModal
                                 title="who do you perform for when you're alone?"
                                 onClose={() => setShowAloneModal(false)}
+                              />
+                            </StaticModalWrapper>
+                          </div>
+                        )}
+                        {showPhotoBoothModal && (
+                          <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
+                            <StaticModalWrapper className='w-[360px]'>
+                              <PhotoBoothModal
+                                onClose={() => setShowPhotoBoothModal(false)}
                               />
                             </StaticModalWrapper>
                           </div>
