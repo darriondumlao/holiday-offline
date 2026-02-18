@@ -51,8 +51,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Prevent Safari mobile zoom on input focus */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        {/* Prevent Safari/Chrome mobile zoom on input focus */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        {/* Chrome address bar color */}
+        <meta name="theme-color" content="#000000" />
+        {/* iOS standalone mode */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        {/* Android Chrome standalone mode */}
+        <meta name="mobile-web-app-capable" content="yes" />
+        {/* Prevent Chrome from auto-linking phone numbers */}
+        <meta name="format-detection" content="telephone=no" />
         {/* Preconnect to external APIs for faster requests */}
         <link rel="preconnect" href="https://a.klaviyo.com" />
         <link rel="preconnect" href="https://sheets.googleapis.com" />

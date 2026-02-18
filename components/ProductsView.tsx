@@ -9,7 +9,6 @@ import { useShopifyCollection, sortSwingersProducts } from '@/hooks/useShopifyCo
 
 interface ProductsViewProps {
   isVisible: boolean
-  showAfterSpotlight?: boolean
   cartItems: CartItem[]
   onAddToCart: (product: { name: string; price: number; size?: string; image?: string; variantId?: string; quantityAvailable?: number }) => void
   onRemoveFromCart: (id: string) => void
@@ -19,7 +18,6 @@ interface ProductsViewProps {
 
 export default function ProductsView({
   isVisible,
-  showAfterSpotlight = false,
   cartItems,
   onAddToCart,
   onRemoveFromCart,
@@ -34,31 +32,9 @@ export default function ProductsView({
   // Using string keys like 'swingers-0', 'preswingers-0' to differentiate collections
   const [revealedCards, setRevealedCards] = useState<Record<string, boolean>>({})
 
-  const [topRowVisible, setTopRowVisible] = useState(false)
-  const [bottomRowVisible, setBottomRowVisible] = useState(false)
   const mobileCartRef = useRef<HTMLDivElement>(null)
   const desktopCartRef = useRef<HTMLDivElement>(null)
   const desktopScrollContainerRef = useRef<HTMLDivElement>(null)
-
-  // Staggered animation after spotlight completes
-  useEffect(() => {
-    if (showAfterSpotlight && isVisible) {
-      // Top row fades in shortly after countdown
-      const topRowTimer = setTimeout(() => {
-        setTopRowVisible(true)
-      }, 100)
-
-      // Bottom row fades in after top row
-      const bottomRowTimer = setTimeout(() => {
-        setBottomRowVisible(true)
-      }, 200)
-
-      return () => {
-        clearTimeout(topRowTimer)
-        clearTimeout(bottomRowTimer)
-      }
-    }
-  }, [showAfterSpotlight, isVisible])
 
   // Arrow key navigation for desktop product grid
   useEffect(() => {
@@ -166,11 +142,13 @@ export default function ProductsView({
     )
   }
 
+  const productsReady = !swingersLoading && swingersProducts.length > 0
+
   return (
     <>
       <div
         className={`fixed inset-0 z-30 flex flex-col items-center transition-opacity duration-500 ${
-          isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          isVisible && productsReady ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         style={{
           paddingTop: 'calc(var(--ticker-height, 32px) + 52px)',
@@ -179,9 +157,7 @@ export default function ProductsView({
         {/* Mobile Layout - Single column, centered, clean scroll */}
         <div className='md:hidden w-full h-full overflow-y-auto overscroll-y-contain scrollbar-hide'>
           <div
-            className={`flex flex-col gap-3 w-full max-w-[360px] mx-auto px-4 pb-20 pt-1 transition-all duration-700 ease-out ${
-              topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
-            }`}
+            className='flex flex-col gap-3 w-full max-w-[360px] mx-auto px-4 pb-20 pt-1'
           >
             {/* SWINGERS Collection */}
             {swingersProducts.map((product, index) => {
@@ -237,9 +213,7 @@ export default function ProductsView({
         {/* Desktop Layout - Grid with vertical scroll */}
         <div ref={desktopScrollContainerRef} className='hidden md:flex items-start justify-center w-full h-full px-4 overflow-y-auto scrollbar-hide'>
           <div
-            className={`w-full max-w-[1400px] py-4 transition-all duration-700 ease-out ${
-              topRowVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'
-            }`}
+            className='w-full max-w-[1400px] py-4'
           >
             {/* SWINGERS Collection Grid */}
             <div className='grid grid-cols-4 gap-4'>

@@ -8,23 +8,11 @@ type ViewMode = 'offline' | 'shop'
 interface HeaderContentProps {
   currentView?: ViewMode
   onViewChange?: (view: ViewMode) => void
-  showAfterSpotlight?: boolean
 }
 
-export default function HeaderContent({ currentView = 'shop', onViewChange, showAfterSpotlight = false }: HeaderContentProps) {
-  const [showContent, setShowContent] = useState(false)
+export default function HeaderContent({ currentView = 'shop', onViewChange }: HeaderContentProps) {
   const [mounted, setMounted] = useState(false)
   const audioPlayerRef = useRef<AudioPlayerHandle>(null)
-
-  // Fade in after spotlight completes (slight stagger after ticker)
-  useEffect(() => {
-    if (showAfterSpotlight) {
-      const timer = setTimeout(() => {
-        setShowContent(true)
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [showAfterSpotlight])
 
   // Set mounted state to avoid hydration mismatch
   useEffect(() => {
@@ -46,9 +34,7 @@ export default function HeaderContent({ currentView = 'shop', onViewChange, show
   return (
     <div
       id="header-content"
-      className={`fixed left-0 right-0 z-[65] py-3 transition-all duration-500 bg-black ${
-        showContent ? 'opacity-100' : 'opacity-0'
-      }`}
+      className="fixed left-0 right-0 z-[65] py-3 bg-black"
       style={{ top: 'var(--ticker-height, 40px)' }}
     >
       {/* Desktop: View Selector - absolute positioned on left */}
