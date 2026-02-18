@@ -122,6 +122,17 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
       sy = (video.videoHeight - sh) / 2
     }
 
+    // For front camera, crop tighter to match the 1.2x preview zoom
+    if (facingMode === 'user') {
+      const zoomFactor = 1.2
+      const cropW = sw / zoomFactor
+      const cropH = sh / zoomFactor
+      sx += (sw - cropW) / 2
+      sy += (sh - cropH) / 2
+      sw = cropW
+      sh = cropH
+    }
+
     // Mirror front camera
     if (facingMode === 'user') {
       ctx.translate(CANVAS_WIDTH, 0)
@@ -325,7 +336,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
         )}
 
         {/* Camera / Countdown Phase */}
-        {(phase === 'camera' || phase === 'countdown') && !cameraError && (
+        {(phase === 'camera' || phase === 'countdown') && !cameraError && !cameraLoading && (
           <>
             {/* Viewfinder */}
             <div className="relative w-full aspect-square bg-black rounded overflow-hidden border-2 border-white/20">
@@ -336,8 +347,8 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 muted
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{
-                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
-                  WebkitTransform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+                  transform: facingMode === 'user' ? 'scaleX(-1) scale(1.2)' : 'none',
+                  WebkitTransform: facingMode === 'user' ? 'scaleX(-1) scale(1.2)' : 'none',
                 }}
               />
 
