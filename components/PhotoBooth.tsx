@@ -562,12 +562,14 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
               >
                 retake
               </button>
-              <button
-                onClick={handleDownload}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 text-sm font-bold rounded active:scale-95 transition-all"
-              >
-                {saveSuccess ? 'saved!' : 'download'}
-              </button>
+              {!IS_IOS && !IS_ANDROID && (
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 text-sm font-bold rounded active:scale-95 transition-all"
+                >
+                  {saveSuccess ? 'saved!' : 'download'}
+                </button>
+              )}
               {canShare && (
                 <button
                   onClick={handleShare}
