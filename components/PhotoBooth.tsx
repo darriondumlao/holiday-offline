@@ -246,6 +246,16 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
     }, 1000)
   }, [capturePhoto])
 
+  // Cancel countdown — abort and return to camera phase
+  const cancelCountdown = useCallback(() => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current)
+      countdownRef.current = null
+    }
+    isCapturingRef.current = false
+    setPhase('camera')
+  }, [])
+
   // Retake photo
   const handleRetake = useCallback(() => {
     if (capturedDataUrl) {
@@ -476,45 +486,59 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
               </AnimatePresence>
             </div>
 
-            {/* Camera controls */}
-            {phase === 'camera' && !cameraLoading && (
-              <div className="flex items-center gap-6">
-                {/* Camera toggle */}
-                {hasMultipleCameras && (
-                  <button
-                    onClick={toggleCamera}
-                    className="w-12 h-12 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center hover:bg-gray-700 active:scale-95 transition-all"
-                    aria-label="Switch camera"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="white"
-                      className="w-5 h-5"
+            {/* Controls — fixed height container prevents viewfinder shift */}
+            {!cameraLoading && (
+              <div className="h-[72px] flex items-center justify-center">
+                {phase === 'camera' && (
+                  <div className="flex items-center gap-6">
+                    {/* Camera toggle */}
+                    {hasMultipleCameras && (
+                      <button
+                        onClick={toggleCamera}
+                        className="w-12 h-12 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center hover:bg-gray-700 active:scale-95 transition-all"
+                        aria-label="Switch camera"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="white"
+                          className="w-5 h-5"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 14.652V19.644"
+                          />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Capture button — 72px touch target for mobile */}
+                    <button
+                      onClick={startCountdown}
+                      disabled={isCapturingRef.current}
+                      className="w-[72px] h-[72px] rounded-full bg-white border-4 border-gray-300 hover:bg-gray-100 active:scale-90 transition-all shadow-lg flex items-center justify-center"
+                      aria-label="Take photo"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 14.652V19.644"
-                      />
-                    </svg>
-                  </button>
+                      <div className="w-14 h-14 rounded-full bg-white border-2 border-gray-400" />
+                    </button>
+
+                    {/* Spacer for centering when toggle is present */}
+                    {hasMultipleCameras && <div className="w-12 h-12" />}
+                  </div>
                 )}
 
-                {/* Capture button — 72px touch target for mobile */}
-                <button
-                  onClick={startCountdown}
-                  disabled={isCapturingRef.current}
-                  className="w-[72px] h-[72px] rounded-full bg-white border-4 border-gray-300 hover:bg-gray-100 active:scale-90 transition-all shadow-lg flex items-center justify-center"
-                  aria-label="Take photo"
-                >
-                  <div className="w-14 h-14 rounded-full bg-white border-2 border-gray-400" />
-                </button>
-
-                {/* Spacer for centering when toggle is present */}
-                {hasMultipleCameras && <div className="w-12 h-12" />}
+                {phase === 'countdown' && (
+                  <button
+                    onClick={cancelCountdown}
+                    className="bg-gray-800 hover:bg-gray-700 text-white py-3 px-8 text-sm font-bold border border-gray-600 rounded active:scale-95 transition-all"
+                    aria-label="Cancel countdown"
+                  >
+                    cancel
+                  </button>
+                )}
               </div>
             )}
           </>

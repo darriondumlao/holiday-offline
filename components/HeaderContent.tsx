@@ -58,9 +58,6 @@ export default function HeaderContent({ currentView = 'shop', onViewChange }: He
         </div>
       )}
 
-      {/* Desktop: Center content placeholder */}
-      {/* Add center content here when needed */}
-
       {/* Desktop: Right side controls - Audio Player */}
       <div className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-50 items-center gap-3">
         <AudioPlayer ref={audioPlayerRef} />
@@ -86,8 +83,6 @@ export default function HeaderContent({ currentView = 'shop', onViewChange }: He
             ))}
           </div>
         )}
-        {/* Center: Content placeholder */}
-        {/* Add center content here when needed */}
         {/* Right: Audio Player */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <AudioPlayer ref={audioPlayerRef} />
