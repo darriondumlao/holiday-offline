@@ -450,19 +450,17 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 }}
               />
 
-              {/* Loading overlay — sits on top of video until camera is ready */}
+              {/* Loading overlay — plain black, seamless with bg during camera toggle */}
               {cameraLoading && (
-                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
-                  <p className="text-gray-400 text-sm">starting camera...</p>
-                </div>
+                <div className="absolute inset-0 bg-black z-[1]" />
               )}
 
-              {/* Overlay preview */}
-              {currentOverlayUrl && !cameraLoading && (
+              {/* Overlay preview — always visible so it doesn't flash on toggle */}
+              {currentOverlayUrl && (
                 <img
                   src={currentOverlayUrl}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none z-[1]"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none z-[2]"
                   draggable={false}
                 />
               )}
@@ -476,7 +474,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.5 }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className="absolute inset-0 flex items-center justify-center z-[2]"
+                    className="absolute inset-0 flex items-center justify-center z-[3]"
                   >
                     <span className="font-bebas text-white text-[120px] leading-none drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
                       {countdownNumber}
