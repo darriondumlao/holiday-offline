@@ -485,14 +485,14 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
             </div>
 
             {/* Controls — fixed height container prevents viewfinder shift */}
-            {!cameraLoading && (
               <div className="h-[72px] flex items-center justify-center">
                 {phase === 'camera' && (
-                  <div className="flex items-center gap-6">
+                  <div className={`flex items-center gap-6 transition-opacity duration-200 ${cameraLoading ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                     {/* Camera toggle */}
                     {hasMultipleCameras && (
                       <button
                         onClick={toggleCamera}
+                        disabled={cameraLoading}
                         className="w-12 h-12 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center hover:bg-gray-700 active:scale-95 transition-all"
                         aria-label="Switch camera"
                       >
@@ -516,7 +516,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                     {/* Capture button — 72px touch target for mobile */}
                     <button
                       onClick={startCountdown}
-                      disabled={isCapturingRef.current}
+                      disabled={cameraLoading || isCapturingRef.current}
                       className="w-[72px] h-[72px] rounded-full bg-white border-4 border-gray-300 hover:bg-gray-100 active:scale-90 transition-all shadow-lg flex items-center justify-center"
                       aria-label="Take photo"
                     >
@@ -538,7 +538,6 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                   </button>
                 )}
               </div>
-            )}
           </>
         )}
 
