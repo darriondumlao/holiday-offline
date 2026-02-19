@@ -56,7 +56,7 @@ export default function Home() {
   const [activeMobileModal, setActiveMobileModal] = useState(0) // Tracks which mobile modal card is in view
   const mobileScrollRef = useRef<HTMLDivElement>(null)
   const mobileModalCount = useRef(0)
-  const [activeDesktopModal, setActiveDesktopModal] = useState(0) // Tracks which desktop modal card is in view
+  const [activeDesktopModal, setActiveDesktopModal] = useState(0)
   const desktopScrollRef = useRef<HTMLDivElement>(null)
   const [desktopModalTotal, setDesktopModalTotal] = useState(0)
 
@@ -235,7 +235,6 @@ export default function Home() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
 
-      // Don't intercept when user is typing in an input
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
@@ -894,7 +893,7 @@ export default function Home() {
                       </StaticModalWrapper>
                     </div>
                   )}
-                  {showPhotoBoothModal && (
+                  {/* {showPhotoBoothModal && (
                     <div className='w-full'>
                       <StaticModalWrapper className='w-full'>
                         <PhotoBoothModal
@@ -902,7 +901,7 @@ export default function Home() {
                         />
                       </StaticModalWrapper>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
 
@@ -982,7 +981,7 @@ export default function Home() {
                             </StaticModalWrapper>
                           </div>
                         )}
-                        {showPhotoBoothModal && (
+                        {/* {showPhotoBoothModal && (
                           <div data-desktop-card={desktopCardIndex++} className='flex-shrink-0 h-full flex items-center justify-center' style={{ scrollSnapAlign: 'center' }}>
                             <StaticModalWrapper className='w-[360px]'>
                               <PhotoBoothModal
@@ -990,7 +989,7 @@ export default function Home() {
                               />
                             </StaticModalWrapper>
                           </div>
-                        )}
+                        )} */}
                       </>
                     )
                   })()}
