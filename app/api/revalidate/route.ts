@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     revalidatePath('/api/site-audio')
     revalidatePath('/api/downloadable-content')
     revalidatePath('/api/slideshow')
+    revalidatePath('/api/yearbook')
 
     return Response.json({ revalidated: true, now: Date.now() })
   } catch (error) {

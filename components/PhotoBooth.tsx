@@ -35,6 +35,10 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [overlayLoaded, setOverlayLoaded] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const selectedOverlayIndex = 0 // Always use the first overlay
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isCapturingRef = useRef(false) // Prevent double-tap during countdown
@@ -265,6 +269,10 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
     setCapturedDataUrl(null)
     setSaveSuccess(false)
     setIsSaving(false)
+    setConsentChecked(false)
+    setUploadSuccess(false)
+    setUploadError('')
+    setIsUploading(false)
     setPhase('camera')
     restartCamera()
   }, [capturedDataUrl, restartCamera])
@@ -316,6 +324,37 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
     setIsSaving(false)
   }, [capturedBlob, isSaving])
+
+  // Upload to yearbook
+  const handleYearbookUpload = useCallback(async () => {
+    if (!capturedBlob || isUploading || !consentChecked) return
+    setIsUploading(true)
+    setUploadError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('photo', capturedBlob, `yearbook-${Date.now()}.jpg`)
+
+      const response = await fetch('/api/yearbook/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setUploadSuccess(true)
+      } else {
+        setUploadError(data.error || 'Upload failed')
+        setTimeout(() => setUploadError(''), 5000)
+      }
+    } catch {
+      setUploadError('Network error. Please try again.')
+      setTimeout(() => setUploadError(''), 5000)
+    } finally {
+      setIsUploading(false)
+    }
+  }, [capturedBlob, isUploading, consentChecked])
 
   // Check if Web Share API with file sharing is supported
   const canShare =
@@ -577,6 +616,40 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 text-sm font-bold rounded active:scale-95 transition-all disabled:opacity-60"
                 >
                   {isSaving ? 'sharing...' : 'share'}
+                </button>
+              )}
+            </div>
+
+            {/* Yearbook upload section */}
+            <div className="w-full flex flex-col gap-2 mt-1">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  disabled={uploadSuccess}
+                  className="mt-0.5 w-4 h-4 accent-blue-500 cursor-pointer"
+                />
+                <span className="text-white/70 text-xs leading-tight">
+                  i consent to my photo being added to the yearbook
+                </span>
+              </label>
+
+              {uploadSuccess ? (
+                <p className="text-green-500 text-xs text-center py-2">
+                  uploaded to yearbook!
+                </p>
+              ) : uploadError ? (
+                <p className="text-yellow-500 text-xs text-center py-2">
+                  {uploadError}
+                </p>
+              ) : (
+                <button
+                  onClick={handleYearbookUpload}
+                  disabled={!consentChecked || isUploading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-sm font-bold rounded active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isUploading ? 'uploading...' : 'add to yearbook'}
                 </button>
               )}
             </div>

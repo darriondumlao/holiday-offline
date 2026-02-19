@@ -186,6 +186,41 @@ export default defineConfig({
           },
         },
       },
+      // Yearbook Photo — user-submitted photos from the photo booth
+      {
+        name: 'yearbookPhoto',
+        title: 'Yearbook Photo',
+        type: 'document',
+        fields: [
+          {
+            name: 'image',
+            title: 'Photo',
+            type: 'image',
+            validation: (Rule: any) => Rule.required(),
+          },
+          {
+            name: 'approved',
+            title: 'Approved',
+            type: 'boolean',
+            description: 'Only approved photos will appear in the yearbook gallery',
+            initialValue: false,
+          },
+        ],
+        preview: {
+          select: {
+            subtitle: 'approved',
+            media: 'image',
+          },
+          prepare(selection: any) {
+            const { subtitle, media } = selection
+            return {
+              title: 'Yearbook Photo',
+              subtitle: subtitle ? '✓ Approved' : '⏳ Pending Review',
+              media: media,
+            }
+          },
+        },
+      },
     ],
   },
 })

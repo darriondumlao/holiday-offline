@@ -43,7 +43,7 @@ export default function ModalWrapper({
       } ${isShaking ? 'animate-shake' : ''}`}
     >
       {/* Blue Header */}
-      <div className='bg-blue-600 px-3 py-1.5 flex items-center justify-between rounded-t-sm overflow-hidden' style={{ containerType: 'inline-size' }}>
+      <div className='bg-blue-600 pl-3 pr-1.5 py-1.5 flex items-center justify-between rounded-t-sm overflow-hidden' style={{ containerType: 'inline-size' }}>
         <h2 className='text-white font-bold lowercase whitespace-nowrap mr-4 min-w-0' style={{ fontSize: 'clamp(7px, 4.5cqw, 14px)' }}>{title}</h2>
         <button
           onClick={handleClose}

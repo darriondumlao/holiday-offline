@@ -12,6 +12,16 @@ export const sanityClient = createClient({
 // Alias for clarity when using holiday4nick data
 export const holiday4nickClient = sanityClient
 
+// Write client for mutations (uploads, document creation)
+// useCdn must be false for write operations
+export const sanityWriteClient = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'uq9s8one',
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  apiVersion: '2025-12-04',
+  useCdn: false,
+  token: process.env.SANITY_API_TOKEN,
+})
+
 // Ticker Message Interface
 export interface TickerMessage {
   _id: string
@@ -276,4 +286,22 @@ export async function getActiveSiteAudio(): Promise<SiteAudio | null> {
     }`
   )
   return results || null
+}
+
+// Yearbook Photo Interface
+export interface YearbookPhoto {
+  _id: string
+  imageUrl: string
+  _createdAt: string
+}
+
+// Get approved yearbook photos
+export async function getApprovedYearbookPhotos(): Promise<YearbookPhoto[]> {
+  return sanityClient.fetch(
+    `*[_type == "yearbookPhoto" && approved == true] | order(_createdAt desc) {
+      _id,
+      "imageUrl": image.asset->url,
+      _createdAt
+    }`
+  )
 }
