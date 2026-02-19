@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface UseCameraReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>
-  stream: MediaStream | null
   error: string | null
   isLoading: boolean
   facingMode: 'user' | 'environment'
@@ -26,105 +25,121 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function useCamera(): UseCameraReturn {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
+  const mountedRef = useRef(true)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false)
 
-  // Detect available cameras
+  // Track mounted state to prevent state updates after unmount
   useEffect(() => {
-    async function detectCameras() {
-      try {
-        if (!navigator.mediaDevices?.enumerateDevices) return
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const videoDevices = devices.filter((d) => d.kind === 'videoinput')
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  // Detect available cameras — called after permission grant for accurate iOS results
+  const detectCameras = useCallback(async () => {
+    try {
+      if (!navigator.mediaDevices?.enumerateDevices) return
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter((d) => d.kind === 'videoinput')
+      if (mountedRef.current) {
         setHasMultipleCameras(videoDevices.length > 1)
-      } catch {
-        // Silently fail - toggle button just won't show
+      }
+    } catch {
+      // Silently fail — toggle button just won't show
+    }
+  }, [])
+
+  // Attach stream to video element with safety checks
+  const attachStream = useCallback((mediaStream: MediaStream) => {
+    // If we already have a stream, stop it first to prevent leaks
+    if (streamRef.current && streamRef.current !== mediaStream) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+    }
+
+    streamRef.current = mediaStream
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = mediaStream
+      // play() returns a promise — catch iOS autoplay rejections
+      const playPromise = videoRef.current.play()
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Autoplay blocked — video element's autoPlay attribute handles this
+        })
       }
     }
-    detectCameras()
   }, [])
 
   // Start camera stream
   const startCamera = useCallback(
     async (facing: 'user' | 'environment') => {
+      if (!mountedRef.current) return
+
       setIsLoading(true)
       setError(null)
 
       if (!navigator.mediaDevices?.getUserMedia) {
-        setError(
-          'Camera access is not available. Please make sure you are using HTTPS.'
-        )
+        setError('Camera access is not available. Please make sure you are using HTTPS.')
         setIsLoading(false)
         return
       }
 
-      try {
-        // Request high resolution for sharp 1080x1080 canvas crop
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
+      // Try with ideal resolution first, then fallback without constraints
+      const constraints = [
+        {
           video: {
             facingMode: facing,
             width: { ideal: 1920 },
             height: { ideal: 1920 },
           },
           audio: false,
-        })
+        },
+        {
+          video: { facingMode: facing },
+          audio: false,
+        },
+        {
+          video: true,
+          audio: false,
+        },
+      ]
 
-        streamRef.current = mediaStream
-        setStream(mediaStream)
+      for (const constraint of constraints) {
+        try {
+          const mediaStream = await navigator.mediaDevices.getUserMedia(constraint)
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream
-          // Ensure video plays on iOS Safari
-          try {
-            await videoRef.current.play()
-          } catch {
-            // play() can fail if user hasn't interacted yet — video autoPlay handles this
-          }
-        }
-
-        setIsLoading(false)
-      } catch (err) {
-        const errorName = err instanceof Error ? err.name : 'Unknown'
-
-        // On OverconstrainedError, retry without resolution constraints
-        if (errorName === 'OverconstrainedError') {
-          try {
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: facing },
-              audio: false,
-            })
-            streamRef.current = fallbackStream
-            setStream(fallbackStream)
-            if (videoRef.current) {
-              videoRef.current.srcObject = fallbackStream
-              try { await videoRef.current.play() } catch {}
-            }
-            setIsLoading(false)
+          if (!mountedRef.current) {
+            // Component unmounted during async — clean up
+            mediaStream.getTracks().forEach((track) => track.stop())
             return
-          } catch {
-            // Fall through to error handling
           }
-        }
 
-        const message =
-          ERROR_MESSAGES[errorName] ||
-          'Failed to start camera. Please try again.'
-        setError(message)
+          attachStream(mediaStream)
+          await detectCameras()
+          setIsLoading(false)
+          return
+        } catch {
+          // Try next constraint set
+          continue
+        }
+      }
+
+      // All constraint sets failed
+      if (mountedRef.current) {
+        setError('Failed to start camera. Please check your permissions and try again.')
         setIsLoading(false)
       }
     },
-    []
+    [attachStream, detectCameras]
   )
 
-  // Stop all tracks
+  // Stop all tracks and clean up
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop())
       streamRef.current = null
-      setStream(null)
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null
@@ -145,9 +160,22 @@ export default function useCamera(): UseCameraReturn {
     startCamera(facingMode)
   }, [facingMode, stopCamera, startCamera])
 
-  // Initialize camera on mount
+  // Attach pending stream when video element mounts into DOM
+  // This covers the race where getUserMedia resolves before <video> renders
+  const streamForEffect = streamRef.current
   useEffect(() => {
-    startCamera(facingMode)
+    if (videoRef.current && streamRef.current && !videoRef.current.srcObject) {
+      videoRef.current.srcObject = streamRef.current
+      const playPromise = videoRef.current.play()
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {})
+      }
+    }
+  }, [streamForEffect, isLoading])
+
+  // Initialize camera on mount, clean up on unmount
+  useEffect(() => {
+    startCamera('user')
 
     return () => {
       if (streamRef.current) {
@@ -160,7 +188,6 @@ export default function useCamera(): UseCameraReturn {
 
   return {
     videoRef,
-    stream,
     error,
     isLoading,
     facingMode,

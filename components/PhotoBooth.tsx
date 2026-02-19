@@ -16,6 +16,17 @@ type BoothPhase = 'camera' | 'countdown' | 'review'
 const CANVAS_WIDTH = 1080
 const CANVAS_HEIGHT = 1080
 
+// Front cameras tend to be wide-angle — zoom in to frame face naturally
+// iOS is extra wide, desktop/Android slightly less so
+const IS_IOS =
+  typeof navigator !== 'undefined' &&
+  /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+  !(navigator as Navigator & { standalone?: boolean }).standalone
+const IS_ANDROID =
+  typeof navigator !== 'undefined' &&
+  /Android/.test(navigator.userAgent)
+const FRONT_CAMERA_ZOOM = IS_IOS ? 1.2 : IS_ANDROID ? 1 : 1.25
+
 export default function PhotoBooth({ onClose }: PhotoBoothProps) {
   const [phase, setPhase] = useState<BoothPhase>('camera')
   const [countdownNumber, setCountdownNumber] = useState(3)
@@ -23,8 +34,10 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
   const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [overlayLoaded, setOverlayLoaded] = useState(false)
   const selectedOverlayIndex = 0 // Always use the first overlay
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isCapturingRef = useRef(false) // Prevent double-tap during countdown
 
   const {
     videoRef,
@@ -47,6 +60,11 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
       if (!overlayImagesRef.current.has(overlay._id)) {
         const img = new Image()
         img.crossOrigin = 'anonymous'
+        img.onload = () => setOverlayLoaded(true)
+        img.onerror = () => {
+          console.error(`Failed to load overlay: ${overlay.imageUrl}`)
+          setOverlayLoaded(true) // Still mark loaded so booth isn't stuck
+        }
         img.src = overlay.imageUrl
         overlayImagesRef.current.set(overlay._id, img)
       }
@@ -55,10 +73,13 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
   // Lock body scroll when booth is open (prevents background scrolling on mobile)
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow
-    const originalPosition = document.body.style.position
-    const originalTop = document.body.style.top
     const scrollY = window.scrollY
+    const originalStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    }
 
     document.body.style.overflow = 'hidden'
     document.body.style.position = 'fixed'
@@ -66,20 +87,31 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
     document.body.style.width = '100%'
 
     return () => {
-      document.body.style.overflow = originalOverflow
-      document.body.style.position = originalPosition
-      document.body.style.top = originalTop
-      document.body.style.width = ''
+      document.body.style.overflow = originalStyles.overflow
+      document.body.style.position = originalStyles.position
+      document.body.style.top = originalStyles.top
+      document.body.style.width = originalStyles.width
       window.scrollTo(0, scrollY)
     }
   }, [])
 
-  // Close handler - stop camera and exit
+  // Clean up blob URL on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (capturedDataUrl) {
+        URL.revokeObjectURL(capturedDataUrl)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Close handler — stop camera, clear countdown, exit
   const handleClose = useCallback(() => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current)
       countdownRef.current = null
     }
+    isCapturingRef.current = false
     stopCamera()
     onClose()
   }, [stopCamera, onClose])
@@ -93,10 +125,17 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleClose])
 
-  // Canvas compositing - capture photo
+  // Clean up countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current)
+    }
+  }, [])
+
+  // Canvas compositing — capture photo with overlay
   const capturePhoto = useCallback(async () => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) return
 
     const canvas = document.createElement('canvas')
     canvas.width = CANVAS_WIDTH
@@ -111,22 +150,23 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
     let sx: number, sy: number, sw: number, sh: number
 
     if (videoAspect > targetAspect) {
+      // Video is wider — crop sides
       sh = video.videoHeight
       sw = sh * targetAspect
       sx = (video.videoWidth - sw) / 2
       sy = 0
     } else {
+      // Video is taller — crop top/bottom
       sw = video.videoWidth
       sh = sw / targetAspect
       sx = 0
       sy = (video.videoHeight - sh) / 2
     }
 
-    // For front camera, crop tighter to match the 1.2x preview zoom
-    if (facingMode === 'user') {
-      const zoomFactor = 1.2
-      const cropW = sw / zoomFactor
-      const cropH = sh / zoomFactor
+    // For front camera on iOS, crop tighter to match the preview zoom
+    if (facingMode === 'user' && FRONT_CAMERA_ZOOM > 1) {
+      const cropW = sw / FRONT_CAMERA_ZOOM
+      const cropH = sh / FRONT_CAMERA_ZOOM
       sx += (sw - cropW) / 2
       sy += (sh - cropH) / 2
       sw = cropW
@@ -141,7 +181,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-    // Reset transform
+    // Reset transform before drawing overlay
     ctx.setTransform(1, 0, 0, 1, 0, 0)
 
     // Draw overlay on top
@@ -150,7 +190,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
     if (selectedOverlay) {
       const overlayImg = overlayImagesRef.current.get(selectedOverlay._id)
-      if (overlayImg && overlayImg.complete) {
+      if (overlayImg && overlayImg.complete && overlayImg.naturalWidth > 0) {
         ctx.drawImage(overlayImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
       }
     }
@@ -169,34 +209,42 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
         0.92
       )
     })
-  }, [videoRef, facingMode, selectedOverlayIndex, overlays])
+  }, [facingMode, selectedOverlayIndex, overlays, videoRef])
 
   // Countdown and capture sequence
   const startCountdown = useCallback(() => {
+    // Guard against double-tap
+    if (isCapturingRef.current) return
+    isCapturingRef.current = true
+
     setPhase('countdown')
     setCountdownNumber(3)
+
+    // Haptic feedback on supported devices
+    if (navigator.vibrate) {
+      navigator.vibrate(50)
+    }
 
     let count = 3
     countdownRef.current = setInterval(() => {
       count -= 1
       if (count > 0) {
         setCountdownNumber(count)
+        if (navigator.vibrate) navigator.vibrate(30)
       } else {
         if (countdownRef.current) clearInterval(countdownRef.current)
         countdownRef.current = null
+
+        // Flash haptic on capture
+        if (navigator.vibrate) navigator.vibrate(100)
+
         capturePhoto().then(() => {
           setPhase('review')
+          isCapturingRef.current = false
         })
       }
     }, 1000)
   }, [capturePhoto])
-
-  // Cleanup countdown on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current)
-    }
-  }, [])
 
   // Retake photo
   const handleRetake = useCallback(() => {
@@ -206,58 +254,65 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
     setCapturedBlob(null)
     setCapturedDataUrl(null)
     setSaveSuccess(false)
+    setIsSaving(false)
     setPhase('camera')
     restartCamera()
   }, [capturedDataUrl, restartCamera])
 
-  // Save to device — uses Web Share API on mobile (iOS/Android), falls back to download
-  const handleSave = useCallback(async () => {
+  // Direct download — always available
+  const handleDownload = useCallback(() => {
+    if (!capturedBlob) return
+
+    const fileName = `photo-booth-${Date.now()}.jpg`
+
+    try {
+      const url = URL.createObjectURL(capturedBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => {
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }, 100)
+      setSaveSuccess(true)
+    } catch {
+      // Fallback: open in new tab so user can right-click/long-press to save
+      if (capturedDataUrl) {
+        window.open(capturedDataUrl, '_blank')
+      }
+    }
+  }, [capturedBlob, capturedDataUrl])
+
+  // Share via native share sheet (iOS saves to Photos, Android share menu, Mac AirDrop etc.)
+  const handleShare = useCallback(async () => {
     if (!capturedBlob || isSaving) return
     setIsSaving(true)
 
     const fileName = `photo-booth-${Date.now()}.jpg`
 
     try {
-      // Use Web Share API if available (best mobile experience — saves to Photos on iOS)
-      if (navigator.share && navigator.canShare) {
-        const file = new File([capturedBlob], fileName, { type: 'image/jpeg' })
-        const shareData = { files: [file] }
-
-        if (navigator.canShare(shareData)) {
-          await navigator.share(shareData)
-          setSaveSuccess(true)
-          setIsSaving(false)
-          return
-        }
-      }
-    } catch (err) {
-      // User cancelled share sheet — not an error
-      if (err instanceof Error && err.name === 'AbortError') {
-        setIsSaving(false)
-        return
-      }
-    }
-
-    // Fallback: direct download (works on desktop and Android Chrome)
-    try {
-      const url = URL.createObjectURL(capturedBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const file = new File([capturedBlob], fileName, { type: 'image/jpeg' })
+      await navigator.share({ files: [file] })
       setSaveSuccess(true)
-    } catch {
-      // Last resort fallback: open image in new tab
-      if (capturedDataUrl) {
-        window.open(capturedDataUrl, '_blank')
+    } catch (err) {
+      // User cancelled — not an error
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('Share failed:', err)
       }
     }
 
     setIsSaving(false)
-  }, [capturedBlob, capturedDataUrl, isSaving])
+  }, [capturedBlob, isSaving])
+
+  // Check if Web Share API with file sharing is supported
+  const canShare =
+    typeof navigator !== 'undefined' &&
+    !!navigator.share &&
+    !!navigator.canShare &&
+    navigator.canShare({ files: [new File([], 'test.jpg', { type: 'image/jpeg' })] })
 
   // Get the current overlay URL for live preview
   const currentOverlayUrl =
@@ -265,15 +320,48 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
       ? overlays[selectedOverlayIndex].imageUrl
       : null
 
+  // Block all zoom/pan gestures on the booth
+  useEffect(() => {
+    // Prevent pinch-to-zoom and double-tap zoom
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault()
+      }
+    }
+    const preventGestureStart = (e: Event) => {
+      e.preventDefault()
+    }
+    // Prevent double-tap zoom
+    let lastTouchEnd = 0
+    const preventDoubleTapZoom = (e: TouchEvent) => {
+      const now = Date.now()
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault()
+      }
+      lastTouchEnd = now
+    }
+
+    document.addEventListener('touchmove', preventZoom, { passive: false })
+    document.addEventListener('touchend', preventDoubleTapZoom, { passive: false })
+    document.addEventListener('gesturestart', preventGestureStart, { passive: false })
+    document.addEventListener('gesturechange', preventGestureStart, { passive: false })
+    document.addEventListener('gestureend', preventGestureStart, { passive: false })
+
+    return () => {
+      document.removeEventListener('touchmove', preventZoom)
+      document.removeEventListener('touchend', preventDoubleTapZoom)
+      document.removeEventListener('gesturestart', preventGestureStart)
+      document.removeEventListener('gesturechange', preventGestureStart)
+      document.removeEventListener('gestureend', preventGestureStart)
+    }
+  }, [])
+
   const portalContent = (
     <div
       className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
-      style={{ touchAction: 'none' }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose()
-      }}
+      style={{ touchAction: 'manipulation' }}
     >
-      {/* Close button */}
+      {/* Close button — respects safe area for notch */}
       <button
         onClick={handleClose}
         className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-10 bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-1.5 cursor-pointer"
@@ -295,11 +383,12 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
 
       {/* Main booth container — respects safe areas for notch/home indicator */}
       <div
-        className="w-full max-w-[400px] mx-auto px-4 flex flex-col items-center gap-4 overflow-y-auto"
+        className="w-full max-w-[400px] mx-auto px-4 flex flex-col items-center gap-4 overflow-y-auto overscroll-y-contain"
         style={{
           maxHeight: '100dvh',
           paddingTop: 'max(2rem, env(safe-area-inset-top))',
           paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {/* Camera Error State */}
@@ -325,20 +414,19 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
               />
             </svg>
             <p className="text-gray-400 text-sm text-center">{cameraError}</p>
-          </div>
-        )}
-
-        {/* Camera Loading State */}
-        {cameraLoading && !cameraError && phase === 'camera' && (
-          <div className="w-full aspect-square bg-gray-900 rounded border-2 border-gray-700 flex items-center justify-center">
-            <p className="text-gray-400 text-sm">starting camera...</p>
+            <button
+              onClick={restartCamera}
+              className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-4 py-2 rounded active:scale-95 transition-all"
+            >
+              try again
+            </button>
           </div>
         )}
 
         {/* Camera / Countdown Phase */}
-        {(phase === 'camera' || phase === 'countdown') && !cameraError && !cameraLoading && (
+        {(phase === 'camera' || phase === 'countdown') && !cameraError && (
           <>
-            {/* Viewfinder */}
+            {/* Viewfinder — video always in DOM so ref is available for stream attachment */}
             <div className="relative w-full aspect-square bg-black rounded overflow-hidden border-2 border-white/20">
               <video
                 ref={videoRef}
@@ -347,17 +435,24 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 muted
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{
-                  transform: facingMode === 'user' ? 'scaleX(-1) scale(1.2)' : 'none',
-                  WebkitTransform: facingMode === 'user' ? 'scaleX(-1) scale(1.2)' : 'none',
+                  transform: facingMode === 'user' ? `scaleX(-1) scale(${FRONT_CAMERA_ZOOM})` : 'none',
+                  WebkitTransform: facingMode === 'user' ? `scaleX(-1) scale(${FRONT_CAMERA_ZOOM})` : 'none',
                 }}
               />
 
+              {/* Loading overlay — sits on top of video until camera is ready */}
+              {cameraLoading && (
+                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
+                  <p className="text-gray-400 text-sm">starting camera...</p>
+                </div>
+              )}
+
               {/* Overlay preview */}
-              {currentOverlayUrl && (
+              {currentOverlayUrl && !cameraLoading && (
                 <img
                   src={currentOverlayUrl}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none z-[1]"
                   draggable={false}
                 />
               )}
@@ -371,7 +466,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.5 }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className="absolute inset-0 flex items-center justify-center"
+                    className="absolute inset-0 flex items-center justify-center z-[2]"
                   >
                     <span className="font-bebas text-white text-[120px] leading-none drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
                       {countdownNumber}
@@ -408,9 +503,10 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                   </button>
                 )}
 
-                {/* Capture button — larger touch target for mobile */}
+                {/* Capture button — 72px touch target for mobile */}
                 <button
                   onClick={startCountdown}
+                  disabled={isCapturingRef.current}
                   className="w-[72px] h-[72px] rounded-full bg-white border-4 border-gray-300 hover:bg-gray-100 active:scale-90 transition-all shadow-lg flex items-center justify-center"
                   aria-label="Take photo"
                 >
@@ -437,7 +533,7 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
               />
             </div>
 
-            {/* Action buttons — tall enough for comfortable mobile tapping */}
+            {/* Action buttons — py-4 for comfortable mobile tapping (48px+ touch target) */}
             <div className="w-full flex gap-2">
               <button
                 onClick={handleRetake}
@@ -446,12 +542,20 @@ export default function PhotoBooth({ onClose }: PhotoBoothProps) {
                 retake
               </button>
               <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 text-sm font-bold rounded active:scale-95 transition-all disabled:opacity-60"
+                onClick={handleDownload}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 text-sm font-bold rounded active:scale-95 transition-all"
               >
-                {isSaving ? 'saving...' : saveSuccess ? 'saved!' : 'save to device'}
+                {saveSuccess ? 'saved!' : 'download'}
               </button>
+              {canShare && (
+                <button
+                  onClick={handleShare}
+                  disabled={isSaving}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 text-sm font-bold rounded active:scale-95 transition-all disabled:opacity-60"
+                >
+                  {isSaving ? 'sharing...' : 'share'}
+                </button>
+              )}
             </div>
           </>
         )}
