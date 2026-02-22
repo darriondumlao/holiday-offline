@@ -11,7 +11,7 @@ export default defineConfig({
   schema: {
     types: [
       {
-        name: 'tickerMessage',
+        name: 'ticker',
         title: 'Ticker Message',
         type: 'document',
         fields: [

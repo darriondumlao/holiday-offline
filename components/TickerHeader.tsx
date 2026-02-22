@@ -47,7 +47,7 @@ export default function TickerHeader() {
 
   // Get up to 2 messages and join them without separators
   const displayMessages = messages.slice(0, 2)
-  const tickerText = displayMessages.map(m => m.text).join(' ')
+  const tickerText = displayMessages.map(m => m.text).join(' · ')
 
   return (
     <div
