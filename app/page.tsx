@@ -8,6 +8,7 @@ import StaticModalWrapper from '@/components/StaticModalWrapper'
 import HeaderContent from '@/components/HeaderContent'
 import ProductsView from '@/components/ProductsView'
 import TickerHeader from '@/components/TickerHeader'
+import SitePasswordGate from '@/components/SitePasswordGate'
 import { CartItem } from '@/components/CartModal'
 import { createCheckoutClient } from '@/lib/shopify'
 
@@ -26,6 +27,20 @@ export type ViewMode = 'offline' | 'shop'
 const CART_STORAGE_KEY = 'holiday-cart'
 
 export default function Home() {
+  const [siteAuthenticated, setSiteAuthenticated] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
+
+  // Check if site-auth cookie is already valid on mount
+  useEffect(() => {
+    fetch('/api/site-auth')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) setSiteAuthenticated(true)
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true))
+  }, [])
+
   const [answer, setAnswer] = useState('')
   const [showSubscribe, setShowSubscribe] = useState(true)
   const [email, setEmail] = useState('')
@@ -295,6 +310,14 @@ export default function Home() {
     }
   }
 
+
+  if (!authChecked) {
+    return <div className="fixed inset-0 bg-black" />
+  }
+
+  if (!siteAuthenticated) {
+    return <SitePasswordGate onAuthenticated={() => setSiteAuthenticated(true)} />
+  }
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-black">
