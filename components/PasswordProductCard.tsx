@@ -25,6 +25,7 @@ export default function PasswordProductCard({
   const [isVerifying, setIsVerifying] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [isCardShaking, setIsCardShaking] = useState(false)
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value)
@@ -81,14 +82,18 @@ export default function PasswordProductCard({
   const isSoldOut = allVariants.length === 0 || allVariants.every(v => !v.availableForSale)
 
   return (
-    <div className='w-full select-none overflow-hidden bg-black rounded-sm'>
+    <div className={`w-full select-none overflow-hidden bg-black rounded-sm ${isCardShaking ? 'animate-shake' : ''}`}>
       {/* Yellow Header */}
       <div className='bg-yellow-500 px-3 py-1.5 flex items-center justify-between gap-2 rounded-t-sm'>
         <h2 className='text-black font-bold text-sm lowercase truncate flex-1 min-w-0'>
           {isUnlocked && product ? `${product.name} ($${product.variants[0]?.price || 0})` : title}
         </h2>
         <button
-          onClick={onClose}
+          onClick={() => {
+              if (isCardShaking) return
+              setIsCardShaking(true)
+              setTimeout(() => setIsCardShaking(false), 500)
+            }}
           className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer flex-shrink-0'
           aria-label='Close'
         >

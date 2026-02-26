@@ -19,6 +19,7 @@ export default function ProductCard({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [isBellPlaying, setIsBellPlaying] = useState(false)
+  const [isShaking, setIsShaking] = useState(false)
   const bellAudioRef = useRef<HTMLAudioElement | null>(null)
 
   if (!product) return null
@@ -77,7 +78,7 @@ export default function ProductCard({
   }
 
   return (
-    <div className='w-full select-none overflow-hidden bg-black rounded-sm'>
+    <div className={`w-full select-none overflow-hidden bg-black rounded-sm ${isShaking ? 'animate-shake' : ''}`}>
       {/* Header */}
       <div className={`relative rounded-t-sm bg-cover bg-center overflow-hidden ${lightboxOpen ? 'z-[100000]' : ''}`} style={{ backgroundImage: 'url(/swingers-1.png)' }}>
         <div className='absolute inset-0 bg-black/40' />
@@ -93,7 +94,9 @@ export default function ProductCard({
               if (lightboxOpen) {
                 setLightboxOpen(false)
               } else {
-                onClose()
+                if (isShaking) return
+                setIsShaking(true)
+                setTimeout(() => setIsShaking(false), 500)
               }
             }}
             className='bg-orange-500 hover:bg-orange-600 hover:scale-110 active:scale-95 transition-all rounded-sm p-0.5 cursor-pointer flex-shrink-0'

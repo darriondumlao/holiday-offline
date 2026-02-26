@@ -81,7 +81,7 @@ export default function ProductsView({
   const isHiddenProduct = (product: { name: string }) =>
     product.name.toLowerCase().includes('+ more') || product.name.toLowerCase().includes('hidden')
 
-  // Render a product card with heart logo reveal overlay
+  // Render a product card
   const renderProductCard = (
     key: string,
     card: React.ReactNode
@@ -89,20 +89,6 @@ export default function ProductsView({
     return (
       <div className='relative'>
         {card}
-        {revealedCards[key] && (
-          <div
-            className='absolute inset-0 flex items-center justify-center bg-black rounded-sm cursor-pointer overflow-hidden z-10'
-            onClick={() => hideCard(key)}
-          >
-            <Image
-              src="/HEARTLOGO.png"
-              alt="Holiday Heart"
-              width={120}
-              height={120}
-              className="object-contain hover:scale-110 transition-transform duration-300 md:w-[150px] md:h-[150px]"
-            />
-          </div>
-        )}
       </div>
     )
   }
